@@ -161,9 +161,18 @@ const backend = {
 }
 
 function setQuota(email, q) {
-  const limit = Number(q.limit || 0), used = Number(q.usage || 0)
-  state.quotas[email] = { used, free: limit ? limit - used : 15e9 }
+  const limit = Number(q.limit || 0) || 15e9, used = Number(q.usage || 0)
+  state.quotas[email] = { used, limit, free: limit - used }
 }
+
+// Drive reports usage minutes late, so count our own pieces right away
+function adjustQuota(entry, sign) {
+  for (const st of entry.stripes) for (const c of [...st.shards, st.parity].filter(Boolean)) {
+    const q = state.quotas[c.account]
+    if (q) { q.used += sign * c.size; q.free -= sign * c.size }
+  }
+}
+const storedBytes = entry => entry.stripes.reduce((s, st) => s + [...st.shards, st.parity].filter(Boolean).reduce((t, c) => t + c.size, 0), 0)
 async function refreshQuota(email) {
   const a = await driveJSON(await accessToken(email), 'GET', 'https://www.googleapis.com/drive/v3/about?fields=storageQuota')
   setQuota(email, a.storageQuota)
@@ -338,26 +347,34 @@ async function openMain() {
 function render() {
   const accs = Object.keys(state.tokens).sort((a, b) => (a === state.main ? -1 : b === state.main ? 1 : a.localeCompare(b)))
   const list = $('#accounts'); list.replaceChildren()
-  let total = 0
+  let limit = 0, used = 0
   for (const email of accs) {
     const q = state.quotas[email]
     const row = el('li', {}, el('span', { class: 'email', text: email + (email === state.main ? ' (ana)' : '') }))
     if (q) {
-      total += q.free
-      const pct = Math.min(100, Math.round(q.used / (q.used + q.free) * 100))
+      limit += q.limit; used += q.used
       const bar = el('div', { class: 'bar' }, el('i'))
-      bar.firstChild.style.width = pct + '%'
-      row.append(bar, el('span', { class: 'free', text: human(q.free) + ' boş' }))
+      bar.firstChild.style.width = Math.min(100, q.used / q.limit * 100) + '%'
+      row.append(bar, el('span', { class: 'free', text: `${human(q.used)} / ${human(q.limit)}` }))
     } else row.append(el('span', { class: 'free bad', text: 'erişilemiyor' }))
     list.append(row)
   }
-  const frees = accs.map(e => state.quotas[e]?.free || 0)
-  const use = human(core.usable(frees))
+  // one gauge for the whole pool: everything used across all accounts
+  const pct = limit ? used / limit * 100 : 0
+  $('#gauge-pct').textContent = `%${pct < 10 ? pct.toFixed(1) : Math.round(pct)} dolu`
+  $('#gauge-nums').textContent = `${human(used)} / ${human(limit)}`
+  $('#gauge i').style.width = Math.min(100, pct) + '%'
+  $('#gauge').classList.toggle('high', pct > 90)
+  const mine = state.index.files.reduce((s, f) => s + f.size, 0)
+  const onDrive = state.index.files.reduce((s, f) => s + storedBytes(f), 0)
+  const use = human(core.usable(accs.map(e => state.quotas[e]?.free || 0)))
   $('#summary').textContent =
-    accs.length === 1 ? `1 hesap · ${use} kullanılabilir · KORUMASIZ: bu hesap kaybolursa dosyalar gider. Bir hesap daha ekle.`
-    : accs.length === 2 ? `2 hesap · her dosya iki hesapta da durur · ${use} kullanılabilir · 3. hesapla alan büyür`
-    : `${accs.length} hesap · ${human(total)} boş · hesap kaybına dayanıklı ${use} kullanılabilir`
+    `Havuzdaki dosyalar: ${state.index.files.length} dosya, ${human(mine)}` +
+    (onDrive > mine ? ` (korumayla Drive'da ${human(onDrive)})` : '') + ` · daha ${use} sığar` +
+    (accs.length === 1 ? ' · KORUMASIZ: bu hesap kaybolursa dosyalar gider, bir hesap daha ekle'
+      : accs.length === 2 ? ' · her dosya iki hesapta da duruyor' : ' · bir hesap kaybolsa da dosyalar güvende')
   $('#summary').classList.toggle('bad', accs.length === 1)
+  $('#acc-count').textContent = accs.length
   $('#drop').classList.toggle('off', accs.length < 1)
 
   const files = $('#files'); files.replaceChildren()
@@ -399,6 +416,8 @@ async function pump() {
         onProgress: (done, all) => { bar.value = all ? Math.round(done / all * 100) : 100 },
       })
       state.index.files.push(entry)
+      adjustQuota(entry, +1)
+      render()
       await saveIndex()
       item.remove()
       toast(`"${f.name}" havuza kondu.`)
@@ -408,7 +427,6 @@ async function pump() {
     }
   }
   busy = false
-  await Promise.all(Object.keys(state.tokens).map(e => refreshQuota(e).catch(() => {})))
   render()
 }
 
@@ -430,8 +448,8 @@ async function remove(f) {
   try {
     await core.removeFile({ entry: f, backend })
     state.index.files = state.index.files.filter(x => x !== f)
+    adjustQuota(f, -1)
     await saveIndex()
-    await Promise.all(Object.keys(state.tokens).map(e => refreshQuota(e).catch(() => {})))
     render()
   } catch (e) { toast(e.message, true) }
 }

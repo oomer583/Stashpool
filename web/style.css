@@ -37,3 +37,7 @@ a { color:#58a6ff }
 code.big { display:inline-block; font:600 20px/1.4 ui-monospace, Consolas, monospace; letter-spacing:1px; background:#0d1117; border:1px solid var(--line); padding:8px 12px; border-radius:8px; overflow-wrap:anywhere }
 label.check { display:flex; gap:8px; align-items:center }
 input#rec-code { font:inherit; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0d1117; color:var(--fg) }
+.bar.big { height:14px; border-radius:7px; margin:6px 0 10px }
+#gauge.high i { background:var(--bad) }
+#gauge-pct { font-size:22px }
+details summary { cursor:pointer; color:var(--dim); margin:8px 0 }

@@ -58,7 +58,11 @@
 
   <section class="screen" id="main" hidden>
     <div class="card">
-      <h2>Hesaplar</h2>
+      <h2>Havuz</h2>
+      <div id="gauge-row" class="row"><b id="gauge-pct"></b><span id="gauge-nums" class="meta"></span></div>
+      <div id="gauge" class="bar big"><i></i></div>
+      <p id="summary" class="meta"></p>
+      <details><summary>Hesapları göster (<span id="acc-count"></span>)</summary><ul id="accounts"></ul></details>
       <div class="row"><span class="meta">Hesabın açık olduğu herhangi bir tarayıcıda ya da telefonda bir kod yazarak bağlanır; şifre gerekmez.</span>
         <button id="device-add" type="button">+ Hesap ekle</button></div>
       <div id="device-box" class="warn" hidden>
@@ -66,8 +70,6 @@
         <p><code id="device-code" class="big"></code></p>
         <span class="meta">Onaylanınca hesap kendiliğinden eklenir.</span> <button id="device-cancel" type="button">Vazgeç</button>
       </div>
-      <p id="summary" class="meta"></p>
-      <ul id="accounts"></ul>
     </div>
     <div class="card">
       <label id="drop">
