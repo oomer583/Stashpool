@@ -59,11 +59,8 @@
   <section class="screen" id="main" hidden>
     <div class="card">
       <h2>Hesaplar</h2>
-      <form id="add-form" class="row">
-        <input id="add-email" type="email" placeholder="eklenecek hesabın e-postası" autocomplete="off">
-        <button id="add-account">+ Google hesabı ekle</button>
-      </form>
-      <p class="meta"><a href="#" id="device-add">Hesap başka bir Chrome profilinde ya da telefonda mı açık? Kodla bağla (şifre gerekmez)</a></p>
+      <div class="row"><span class="meta">Hesabın açık olduğu herhangi bir tarayıcıda ya da telefonda bir kod yazarak bağlanır; şifre gerekmez.</span>
+        <button id="device-add" type="button">+ Hesap ekle</button></div>
       <div id="device-box" class="warn" hidden>
         Hesabın <b>açık olduğu</b> tarayıcıda ya da telefonda <a id="device-url" target="_blank" rel="noopener"></a> adresini aç ve bu kodu yaz:
         <p><code id="device-code" class="big"></code></p>

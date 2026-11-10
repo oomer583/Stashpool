@@ -33,7 +33,6 @@ progress { flex:1 1 160px; accent-color:var(--acc) }
 #toast.bad { border-color:var(--bad) }
 footer { color:var(--dim); font-size:14px }
 a { color:#58a6ff }
-#add-form { margin:0 0 4px; flex-wrap:wrap }
 #add-email { flex:1 1 220px; font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:#0d1117; color:var(--fg) }
 code.big { display:inline-block; font:600 20px/1.4 ui-monospace, Consolas, monospace; letter-spacing:1px; background:#0d1117; border:1px solid var(--line); padding:8px 12px; border-radius:8px; overflow-wrap:anywhere }
 label.check { display:flex; gap:8px; align-items:center }

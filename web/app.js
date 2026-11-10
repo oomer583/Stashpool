@@ -206,7 +206,10 @@ async function saveIndex() {
 async function onSignIn() {
   $('#signin').disabled = true
   try {
-    const email = await connectGoogle({ hint: localStorage.getItem('havuz.main') || '', consent: !localStorage.getItem('havuz.main') })
+    // ask Google for long-lived permission unless this browser already opened
+    // a pool: then the permission is inside the encrypted list, and asking
+    // again would only show the consent screen for nothing
+    const email = await connectGoogle({ hint: localStorage.getItem('havuz.main') || '', consent: !localStorage.getItem('havuz.pool') })
     state.main = email
     localStorage.setItem('havuz.main', email) // only the address, never a token
     const id = await findIndex(email)
@@ -239,6 +242,7 @@ async function onUnlock(ev) {
 async function enter(vault, index) {
   state.vault = vault
   state.index = index
+  localStorage.setItem('havuz.pool', '2')
   for (const a of index.accounts) {
     const t = state.tokens[a.email] || (state.tokens[a.email] = {})
     if (!t.refresh) { t.refresh = a.refresh; t.kind = a.kind || 'web' }
@@ -279,6 +283,7 @@ async function onCreate(ev) {
   state.vault = vault
   state.index = { version: 2, files: [], accounts: [] }
   await saveIndex()
+  localStorage.setItem('havuz.pool', '2')
   $('#rec-show').textContent = recovery
   show('recovery')
 }
@@ -364,22 +369,6 @@ function render() {
   }
 }
 
-async function onAddAccount(ev) {
-  ev?.preventDefault()
-  const want = $('#add-email').value.trim().toLowerCase()
-  if (want && state.tokens[want]?.refresh) return toast(want + ' zaten bağlı.')
-  try {
-    // with a hint Google opens straight to that account's sign-in
-    const email = await connectGoogle({ consent: true, hint: want })
-    if (want && email.toLowerCase() !== want) toast(`Not: ${want} yerine ${email} bağlandı.`, true)
-    $('#add-email').value = ''
-    if (!state.tokens[email].refresh) throw new Error('Google kalıcı izin vermedi; myaccount.google.com/permissions adresinden havuz iznini kaldırıp tekrar dene.')
-    await saveIndex()
-    render()
-    toast(email + ' eklendi.')
-  } catch (e) { toast(e.message, true) }
-}
-
 // ---------- files ----------
 
 const queue = []
@@ -449,8 +438,7 @@ async function remove(f) {
 $('#signin').onclick = onSignIn
 $('#unlock-form').onsubmit = onUnlock
 $('#create-form').onsubmit = onCreate
-$('#add-form').onsubmit = onAddAccount
-$('#device-add').onclick = onDeviceAdd
+$('#device-add').onclick = e => { e.preventDefault(); onDeviceAdd() }
 $('#device-cancel').onclick = () => { $('#device-box').hidden = true }
 $('#recover-form').onsubmit = onRecover
 $('#forgot').onclick = e => { e.preventDefault(); show('recover') }
