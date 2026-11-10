@@ -172,22 +172,74 @@ export async function removeFile({ entry, backend }) {
   }
 }
 
-// The index (list of files) is stored encrypted, a copy in every account.
-// Layout: "HVZ1" + 16-byte salt + encrypted JSON. The salt is plain so the
-// key can be made from the password before anything is decrypted.
-export async function sealIndex(key, salt, index) {
-  const body = await encrypt(key, new TextEncoder().encode(JSON.stringify(index)))
-  const out = new Uint8Array(4 + 16 + body.length)
-  out.set(MAGIC, 0); out.set(salt, 4); out.set(body, 20)
+// ---------- the vault: password + recovery code ----------
+//
+// Files are encrypted with a random 256-bit master key. The master key is
+// stored twice, each copy encrypted ("wrapped") with a key made from:
+//   1. the user's password
+//   2. a one-time recovery code shown when the pool is created
+// Either one opens the pool, so a forgotten password is not the end, and the
+// password can be changed without re-encrypting any file.
+//
+// Index file layout: "HVZ2" | salt 16 | wrapP 60 | wrapR 60 | encrypted JSON
+
+const MAGIC2 = new TextEncoder().encode('HVZ2')
+const WRAP = 60 // 12 IV + 32 key + 16 tag
+const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ' // no I L O U: easy to read aloud and write down
+
+export function makeRecoveryCode() {
+  const bytes = randomBytes(20)
+  let bits = 0, val = 0, out = ''
+  for (const b of bytes) {
+    val = (val << 8) | b; bits += 8
+    while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5 }
+  }
+  return out.match(/.{4}/g).join('-') // 32 chars, 160 bits
+}
+
+export const normRecovery = s => s.toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1')
+
+async function vaultFrom(master, salt) {
+  const key = await subtle.importKey('raw', master, 'AES-GCM', false, ['encrypt', 'decrypt'])
+  return { master, key, salt }
+}
+
+export async function createVault(password) {
+  const master = randomBytes(32), salt = randomBytes(16)
+  const recovery = makeRecoveryCode()
+  const vault = await vaultFrom(master, salt)
+  vault.wrapP = await encrypt(await deriveKey(password, salt), master)
+  vault.wrapR = await encrypt(await deriveKey(normRecovery(recovery), salt), master)
+  return { vault, recovery }
+}
+
+export async function setPassword(vault, password) {
+  vault.wrapP = await encrypt(await deriveKey(password, vault.salt), vault.master)
+}
+
+export async function sealVault(vault, index) {
+  const body = await encrypt(vault.key, new TextEncoder().encode(JSON.stringify(index)))
+  const out = new Uint8Array(4 + 16 + 2 * WRAP + body.length)
+  out.set(MAGIC2, 0); out.set(vault.salt, 4); out.set(vault.wrapP, 20); out.set(vault.wrapR, 20 + WRAP); out.set(body, 20 + 2 * WRAP)
   return out
 }
 
-export function indexSalt(bytes) {
-  for (let i = 0; i < 4; i++) if (bytes[i] !== MAGIC[i]) throw new Error('not a havuz index')
-  return bytes.slice(4, 20)
+export function vaultFormat(bytes) {
+  const tag = new TextDecoder().decode(bytes.subarray(0, 4))
+  return tag === 'HVZ2' ? 2 : tag === 'HVZ1' ? 1 : 0
 }
 
-export async function openIndex(key, bytes) {
-  indexSalt(bytes)
-  return JSON.parse(new TextDecoder().decode(await decrypt(key, bytes.subarray(20))))
+// openVault(bytes, password) or openVault(bytes, code, { recovery: true })
+export async function openVault(bytes, secret, { recovery = false } = {}) {
+  if (vaultFormat(bytes) !== 2) throw new Error('not a havuz index (or an old test format)')
+  const salt = bytes.slice(4, 20)
+  const wrapP = bytes.slice(20, 20 + WRAP), wrapR = bytes.slice(20 + WRAP, 20 + 2 * WRAP)
+  const kek = await deriveKey(recovery ? normRecovery(secret) : secret, salt)
+  let master
+  try { master = await decrypt(kek, recovery ? wrapR : wrapP) }
+  catch { throw new Error(recovery ? 'wrong recovery code' : 'wrong password') }
+  const vault = await vaultFrom(master, salt)
+  vault.wrapP = wrapP; vault.wrapR = wrapR
+  const index = JSON.parse(new TextDecoder().decode(await decrypt(vault.key, bytes.subarray(20 + 2 * WRAP))))
+  return { vault, index }
 }

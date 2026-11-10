@@ -123,12 +123,36 @@ await test('remove deletes every piece', async () => {
   assert.equal(be.files.size, 0)
 })
 
-await test('encrypted index round trip, salt readable, wrong password fails', async () => {
-  const idx = { files: [{ name: 'a.txt' }] }
-  const sealed = await core.sealIndex(key, salt, idx)
-  assert.deepEqual(core.indexSalt(sealed), salt)
-  assert.deepEqual(await core.openIndex(key, sealed), idx)
-  await assert.rejects(core.openIndex(await core.deriveKey('nope', salt), sealed), /wrong password/)
+await test('vault: password and recovery code both open it', async () => {
+  const { vault, recovery } = await core.createVault('my long password')
+  assert.match(recovery, /^([0-9A-Z]{4}-){7}[0-9A-Z]{4}$/)
+  const sealed = await core.sealVault(vault, { files: [{ name: 'a' }] })
+  const a = await core.openVault(sealed, 'my long password')
+  assert.deepEqual(a.index, { files: [{ name: 'a' }] })
+  const b = await core.openVault(sealed, recovery.toLowerCase().replace(/-/g, ' '), { recovery: true })
+  assert.deepEqual(b.index, a.index)
+  await assert.rejects(core.openVault(sealed, 'wrong'), /wrong password/)
+  await assert.rejects(core.openVault(sealed, 'AAAA-AAAA', { recovery: true }), /wrong recovery code/)
+})
+
+await test('vault: forgot password -> recovery -> new password, files still readable', async () => {
+  const { vault, recovery } = await core.createVault('old password!')
+  const be = new Fake(big), { data, readAt } = source(6 * MB)
+  const entry = await core.putFile({ name: 'x', size: data.length, readAt, backend: be, accounts, key: vault.key })
+  const sealed = await core.sealVault(vault, { files: [entry] })
+  const r = await core.openVault(sealed, recovery, { recovery: true })
+  await core.setPassword(r.vault, 'brand new password')
+  const resealed = await core.sealVault(r.vault, r.index)
+  await assert.rejects(core.openVault(resealed, 'old password!'), /wrong password/)
+  const n = await core.openVault(resealed, 'brand new password')
+  assert.deepEqual(await readAll(n.index.files[0], be, new Set(['b']), n.vault.key), data)
+  // the recovery code keeps working after a password change
+  await core.openVault(resealed, recovery, { recovery: true })
+})
+
+await test('vault: old test format is detected, not misread', async () => {
+  assert.equal(core.vaultFormat(new TextEncoder().encode('HVZ1xxxx')), 1)
+  await assert.rejects(core.openVault(new TextEncoder().encode('HVZ1' + 'x'.repeat(200)), 'p'), /old test format/)
 })
 
 console.log(`\n${passed} passed`)

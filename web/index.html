@@ -33,6 +33,27 @@
       <label>Havuz şifresi <input id="unlock-pass" type="password" autocomplete="current-password" required></label>
       <button id="unlock-btn" class="primary">Aç</button>
     </form>
+    <p><a href="#" id="forgot">Şifremi unuttum: kurtarma anahtarıyla aç</a></p>
+  </section>
+
+  <section class="screen" id="recovery" hidden>
+    <h2>Kurtarma anahtarın</h2>
+    <p class="warn">Şifreni unutursan havuzu <b>sadece bu anahtar</b> açar. Bir kâğıda yaz ya da telefonunda güvenli bir yere kaydet. Bir daha gösterilmeyecek.</p>
+    <p><code id="rec-show" class="big"></code></p>
+    <p><button id="rec-copy" type="button">Kopyala</button></p>
+    <label class="check"><input id="rec-ok" type="checkbox"> Kaydettim</label>
+    <p><button id="rec-continue" class="primary" type="button">Devam</button></p>
+  </section>
+
+  <section class="screen" id="recover" hidden>
+    <h2>Kurtarma anahtarıyla aç: <span class="who"></span></h2>
+    <form id="recover-form">
+      <input name="username" autocomplete="username" hidden>
+      <label>Kurtarma anahtarı <input id="rec-code" autocomplete="off" required placeholder="XXXX-XXXX-..."></label>
+      <label>Yeni havuz şifresi <input id="rec-pass" type="password" autocomplete="new-password" required minlength="10"></label>
+      <label>Tekrar <input id="rec-pass2" type="password" autocomplete="new-password" required minlength="10"></label>
+      <button id="rec-btn" class="primary">Aç ve yeni şifreyi kaydet</button>
+    </form>
   </section>
 
   <section class="screen" id="main" hidden>
@@ -42,6 +63,12 @@
         <input id="add-email" type="email" placeholder="eklenecek hesabın e-postası" autocomplete="off">
         <button id="add-account">+ Google hesabı ekle</button>
       </form>
+      <p class="meta"><a href="#" id="device-add">Hesap başka bir Chrome profilinde ya da telefonda mı açık? Kodla bağla (şifre gerekmez)</a></p>
+      <div id="device-box" class="warn" hidden>
+        Hesabın <b>açık olduğu</b> tarayıcıda ya da telefonda <a id="device-url" target="_blank" rel="noopener"></a> adresini aç ve bu kodu yaz:
+        <p><code id="device-code" class="big"></code></p>
+        <span class="meta">Onaylanınca hesap kendiliğinden eklenir.</span> <button id="device-cancel" type="button">Vazgeç</button>
+      </div>
       <p id="summary" class="meta"></p>
       <ul id="accounts"></ul>
     </div>

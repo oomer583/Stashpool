@@ -11,7 +11,7 @@ const $ = s => document.querySelector(s)
 const state = {
   main: null,          // email of the account the user signed in with
   tokens: {},          // email -> { access, exp, refresh }
-  key: null, salt: null,
+  vault: null,         // { key, master, salt, wraps }: opened with password or recovery code
   index: null,         // { accounts: [{email, refresh}], files: [entry] }
   indexIds: {},        // email -> Drive id of that account's index copy
   quotas: {},          // email -> { used, free }
@@ -88,7 +88,7 @@ async function connectGoogle({ hint = '', consent = false } = {}) {
 async function tokenCall(body) {
   const r = await fetch(TOKEN_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const j = await r.json().catch(() => ({}))
-  if (!r.ok) throw new Error('Google anahtarı alınamadı: ' + (j.error || r.status))
+  if (!r.ok) throw Object.assign(new Error('Google anahtarı alınamadı: ' + (j.error || r.status)), { code: j.error })
   return j
 }
 
@@ -96,7 +96,7 @@ async function accessToken(email) {
   const t = state.tokens[email]
   if (t?.access && Date.now() < t.exp) return t.access
   if (!t?.refresh) throw new Error(`${email} için izin yok; hesabı yeniden bağla.`)
-  const j = await tokenCall({ refresh_token: t.refresh })
+  const j = await tokenCall({ refresh_token: t.refresh, kind: t.kind || 'web' })
   t.access = j.access_token
   t.exp = Date.now() + (j.expires_in - 60) * 1000
   return t.access
@@ -181,8 +181,9 @@ async function findIndex(email) {
 
 async function saveIndex() {
   state.index.saved = Date.now()
-  state.index.accounts = Object.entries(state.tokens).filter(([, t]) => t.refresh).map(([email, t]) => ({ email, refresh: t.refresh }))
-  const sealed = await core.sealIndex(state.key, state.salt, state.index)
+  state.index.accounts = Object.entries(state.tokens).filter(([, t]) => t.refresh)
+    .map(([email, t]) => ({ email, refresh: t.refresh, kind: t.kind || 'web' }))
+  const sealed = await core.sealVault(state.vault, state.index)
   const fails = []
   // a copy in every account, so any single account is enough to open the pool
   await Promise.all(state.index.accounts.map(async ({ email }) => {
@@ -211,12 +212,13 @@ async function onSignIn() {
     const id = await findIndex(email)
     for (const e of document.querySelectorAll('.who')) e.textContent = email
     for (const e of document.querySelectorAll('input[name=username]')) e.value = email
-    if (id) {
+    if (id) state.sealedIndex = await backend.download(email, id)
+    if (id && core.vaultFormat(state.sealedIndex) === 2) {
       state.indexIds[email] = id
-      state.sealedIndex = await backend.download(email, id)
       show('unlock')
       $('#unlock-pass').focus()
     } else {
+      if (id) state.indexIds[email] = id // old test format: overwritten on create
       show('create')
       $('#create-pass').focus()
     }
@@ -227,17 +229,39 @@ async function onUnlock(ev) {
   ev.preventDefault()
   const btn = $('#unlock-btn'); btn.disabled = true; btn.textContent = 'Açılıyor…'
   try {
-    state.salt = core.indexSalt(state.sealedIndex)
-    state.key = await core.deriveKey($('#unlock-pass').value, state.salt)
-    state.index = await core.openIndex(state.key, state.sealedIndex)
-    for (const a of state.index.accounts) {
-      if (!state.tokens[a.email]) state.tokens[a.email] = { refresh: a.refresh }
-      else if (!state.tokens[a.email].refresh) state.tokens[a.email].refresh = a.refresh
-    }
-    await openMain()
+    const { vault, index } = await core.openVault(state.sealedIndex, $('#unlock-pass').value)
+    await enter(vault, index)
   } catch (e) {
     toast(e.message.includes('password') ? 'Şifre yanlış.' : e.message, true)
   } finally { btn.disabled = false; btn.textContent = 'Aç' }
+}
+
+async function enter(vault, index) {
+  state.vault = vault
+  state.index = index
+  for (const a of index.accounts) {
+    const t = state.tokens[a.email] || (state.tokens[a.email] = {})
+    if (!t.refresh) { t.refresh = a.refresh; t.kind = a.kind || 'web' }
+  }
+  await openMain()
+}
+
+async function onRecover(ev) {
+  ev.preventDefault()
+  const p1 = $('#rec-pass').value, p2 = $('#rec-pass2').value
+  if (p1.length < 10) return toast('Yeni şifre en az 10 karakter olsun.', true)
+  if (p1 !== p2) return toast('Şifreler aynı değil.', true)
+  const btn = $('#rec-btn'); btn.disabled = true
+  try {
+    const { vault, index } = await core.openVault(state.sealedIndex, $('#rec-code').value, { recovery: true })
+    await core.setPassword(vault, p1)
+    state.vault = vault; state.index = index
+    await enter(vault, index)
+    await saveIndex()
+    toast('Yeni şifre kaydedildi. Kurtarma anahtarın aynı kaldı.')
+  } catch (e) {
+    toast(e.message.includes('recovery') ? 'Kurtarma anahtarı yanlış.' : e.message, true)
+  } finally { btn.disabled = false }
 }
 
 async function onCreate(ev) {
@@ -246,11 +270,53 @@ async function onCreate(ev) {
   if (p1.length < 10) return toast('Şifre en az 10 karakter olsun.', true)
   if (p1 !== p2) return toast('Şifreler aynı değil.', true)
   if (!state.tokens[state.main]?.refresh) return toast('Ana hesabın kalıcı izni gelmedi; sayfayı yenileyip tekrar giriş yap.', true)
-  state.salt = core.randomBytes(16)
-  state.key = await core.deriveKey(p1, state.salt)
-  state.index = { version: 1, files: [], accounts: [] }
+  const { vault, recovery } = await core.createVault(p1)
+  state.vault = vault
+  state.index = { version: 2, files: [], accounts: [] }
   await saveIndex()
+  $('#rec-show').textContent = recovery
+  show('recovery')
+}
+
+async function onRecoverySaved() {
+  if (!$('#rec-ok').checked) return toast('Önce kurtarma anahtarını bir yere kaydet.', true)
+  $('#rec-show').textContent = ''
   await openMain()
+}
+
+// connect an account that is signed in somewhere else (another browser
+// profile, a phone): no password needed, just type a code at google.com/device
+async function onDeviceAdd() {
+  const box = $('#device-box')
+  try {
+    const d = await tokenCall({ device_start: true })
+    box.hidden = false
+    $('#device-code').textContent = d.user_code
+    $('#device-url').textContent = d.verification_url
+    $('#device-url').href = d.verification_url
+    let wait = (d.interval || 5) * 1000
+    const until = Date.now() + 15 * 60 * 1000
+    while (Date.now() < until && !box.hidden) {
+      await new Promise(r => setTimeout(r, wait))
+      try {
+        const t = await tokenCall({ device_code: d.device_code })
+        const tok = { access: t.access_token, exp: Date.now() + (t.expires_in - 60) * 1000, refresh: t.refresh_token, kind: 'device' }
+        const about = await driveJSON(tok.access, 'GET', 'https://www.googleapis.com/drive/v3/about?fields=user(emailAddress),storageQuota')
+        const email = about.user.emailAddress
+        state.tokens[email] = tok
+        setQuota(email, about.storageQuota)
+        await saveIndex()
+        box.hidden = true
+        render()
+        return toast(email + ' eklendi.')
+      } catch (e) {
+        if (e.code === 'authorization_pending') continue
+        if (e.code === 'slow_down') { wait += 5000; continue }
+        throw e
+      }
+    }
+    box.hidden = true
+  } catch (e) { box.hidden = true; toast(e.message, true) }
 }
 
 async function openMain() {
@@ -330,7 +396,7 @@ async function pump() {
     const bar = item.querySelector('progress')
     try {
       const entry = await core.putFile({
-        name: f.name, size: f.size, backend, key: state.key,
+        name: f.name, size: f.size, backend, key: state.vault.key,
         accounts: Object.keys(state.tokens),
         readAt: async (o, n) => new Uint8Array(await f.slice(o, o + n).arrayBuffer()),
         onProgress: (done, all) => { bar.value = all ? Math.round(done / all * 100) : 100 },
@@ -354,7 +420,7 @@ async function download(f) {
   try {
     const parts = []
     let rebuilt = new Set()
-    for await (const p of core.readStripes({ entry: f, backend, key: state.key, onRebuild: (_, acc) => rebuilt.add(acc) })) parts.push(p)
+    for await (const p of core.readStripes({ entry: f, backend, key: state.vault.key, onRebuild: (_, acc) => rebuilt.add(acc) })) parts.push(p)
     const url = URL.createObjectURL(new Blob(parts))
     el('a', { href: url, download: f.name }).click()
     setTimeout(() => URL.revokeObjectURL(url), 60000)
@@ -379,6 +445,12 @@ $('#signin').onclick = onSignIn
 $('#unlock-form').onsubmit = onUnlock
 $('#create-form').onsubmit = onCreate
 $('#add-form').onsubmit = onAddAccount
+$('#device-add').onclick = onDeviceAdd
+$('#device-cancel').onclick = () => { $('#device-box').hidden = true }
+$('#recover-form').onsubmit = onRecover
+$('#forgot').onclick = e => { e.preventDefault(); show('recover') }
+$('#rec-continue').onclick = onRecoverySaved
+$('#rec-copy').onclick = () => navigator.clipboard.writeText($('#rec-show').textContent).then(() => toast('Kopyalandı.'))
 $('#pick').onchange = e => { enqueue(e.target.files); e.target.value = '' }
 const drop = $('#drop')
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover') }
