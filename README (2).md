@@ -1,0 +1,55 @@
+# havuz
+
+**One big storage pool from many free cloud accounts — that survives losing an account.**
+
+Tools like rclone `union`, CloudNest and Drive-Pool already merge several Google Drive accounts into one place.
+But if one of those accounts gets closed, suspended or locked, every file stored in it is gone.
+
+havuz adds **parity** (the idea behind RAID 5): each file is split across N accounts plus one parity piece.
+If any one account disappears, its pieces are rebuilt from the others.
+
+| Accounts (15 GB each) | Raw space | Usable with 1 parity | Survives |
+|---|---|---|---|
+| 3 | 45 GB | 30 GB | any 1 account lost |
+| 5 | 75 GB | 60 GB | any 1 account lost |
+| 10 | 150 GB | 135 GB | any 1 account lost |
+
+Copying every file twice would halve your space. Parity only costs one account's worth.
+
+> Use your own accounts. havuz is not a tool for mass-creating accounts.
+
+## Status
+
+Early. Built in public, one step a day.
+
+- [x] Day 1: connect Google Drive accounts with a device code (no browser needed on the machine), show free space
+- [ ] Upload a file, split into chunks across accounts
+- [ ] XOR parity: survive losing 1 account
+- [ ] Rebuild a lost account onto a new one
+- [ ] Reed-Solomon: survive losing 2+ accounts
+- [ ] Dropbox, OneDrive
+- [ ] Web UI
+
+## Build
+
+Only the Go standard library is used.
+
+```
+go build -o havuz .
+```
+
+## Use
+
+```
+havuz setup        # paste your Google OAuth client ID and secret (once)
+havuz add main     # prints a code; enter it at google.com/device on any device
+havuz add backup1
+havuz list         # every account, free space, and usable space with parity
+```
+
+You need your own Google Cloud OAuth client of type **TVs and Limited Input devices**.
+havuz only asks for the `drive.file` scope: it can see the files it created, nothing else in your Drive.
+
+## License
+
+MIT
