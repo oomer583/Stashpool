@@ -269,7 +269,12 @@ async function onCreate(ev) {
   const p1 = $('#create-pass').value, p2 = $('#create-pass2').value
   if (p1.length < 10) return toast('Şifre en az 10 karakter olsun.', true)
   if (p1 !== p2) return toast('Şifreler aynı değil.', true)
-  if (!state.tokens[state.main]?.refresh) return toast('Ana hesabın kalıcı izni gelmedi; sayfayı yenileyip tekrar giriş yap.', true)
+  if (!state.tokens[state.main]?.refresh) {
+    // signed in before on this browser, so Google skipped the long-lived
+    // permission; ask for it once more (this click allows the popup)
+    try { await connectGoogle({ hint: state.main, consent: true }) } catch (e) { return toast(e.message, true) }
+    if (!state.tokens[state.main]?.refresh) return toast('Google kalıcı izni yine vermedi. myaccount.google.com/permissions adresinden havuz iznini kaldırıp tekrar dene.', true)
+  }
   const { vault, recovery } = await core.createVault(p1)
   state.vault = vault
   state.index = { version: 2, files: [], accounts: [] }
