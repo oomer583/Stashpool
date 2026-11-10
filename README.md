@@ -23,8 +23,8 @@ Copying every file twice would halve your space. Parity only costs one account's
 Early. Built in public, one step a day.
 
 - [x] Day 1: connect Google Drive accounts with a device code (no browser needed on the machine), show free space
-- [ ] Upload a file, split into chunks across accounts
-- [ ] XOR parity: survive losing 1 account
+- [x] Day 2: put / get / ls / rm for files and whole folders (zipped on the fly, nothing written to disk); SHA-256 checked on the way back
+- [x] Day 3: XOR parity across accounts (rotating, RAID 5 style); full accounts drop out of new stripes so one small account never caps the pool; `--without` proves recovery
 - [ ] Rebuild a lost account onto a new one
 - [ ] Reed-Solomon: survive losing 2+ accounts
 - [ ] Dropbox, OneDrive
@@ -45,6 +45,11 @@ havuz setup        # paste your Google OAuth client ID and secret (once)
 havuz add main     # prints a code; enter it at google.com/device on any device
 havuz add backup1
 havuz list         # every account, free space, and usable space with parity
+havuz put photo.jpg   # split into chunks, spread over the accounts
+havuz ls              # files in the pool
+havuz get photo.jpg copy.jpg   # rebuild and verify
+havuz get photo.jpg copy.jpg --without backup1   # pretend backup1 is gone: rebuilt from parity
+havuz rm photo.jpg
 ```
 
 You need your own Google Cloud OAuth client of type **TVs and Limited Input devices**.

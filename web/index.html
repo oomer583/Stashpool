@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>havuz</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><h1>havuz</h1><p>Ücretsiz Google hesaplarından tek, şifreli, hesap kaybına dayanıklı bir depo.</p></header>
+
+<main>
+  <section class="screen" id="start">
+    <p>Dosyaların senin cihazında şifrelenir ve doğrudan senin Google Drive hesaplarına gider. Hiçbir sunucu dosyalarını görmez.</p>
+    <button id="signin" class="primary">Ana Google hesabınla giriş yap</button>
+  </section>
+
+  <section class="screen" id="create" hidden>
+    <h2>Yeni havuz: <span class="who"></span></h2>
+    <p class="warn">Bu şifreyi unutursan dosyalar <b>hiç kimse tarafından</b> kurtarılamaz. Şifre yöneticine kaydet.</p>
+    <form id="create-form">
+      <input name="username" autocomplete="username" hidden>
+      <label>Havuz şifresi <input id="create-pass" type="password" autocomplete="new-password" required minlength="10"></label>
+      <label>Tekrar <input id="create-pass2" type="password" autocomplete="new-password" required minlength="10"></label>
+      <button class="primary">Havuzu oluştur</button>
+    </form>
+  </section>
+
+  <section class="screen" id="unlock" hidden>
+    <h2>Havuzu aç: <span class="who"></span></h2>
+    <form id="unlock-form">
+      <input name="username" autocomplete="username" hidden>
+      <label>Havuz şifresi <input id="unlock-pass" type="password" autocomplete="current-password" required></label>
+      <button id="unlock-btn" class="primary">Aç</button>
+    </form>
+  </section>
+
+  <section class="screen" id="main" hidden>
+    <div class="card">
+      <div class="row"><h2>Hesaplar</h2><button id="add-account">+ Google hesabı ekle</button></div>
+      <p id="summary" class="meta"></p>
+      <ul id="accounts"></ul>
+    </div>
+    <div class="card">
+      <label id="drop">
+        <input id="pick" type="file" multiple hidden>
+        <b>Dosyaları buraya bırak</b> ya da dokunup seç
+        <span class="meta">Telefonda galeriden, bilgisayarda klasörlerinden</span>
+      </label>
+      <ul id="uploads"></ul>
+    </div>
+    <div class="card">
+      <h2>Dosyalar</h2>
+      <ul id="files"></ul>
+    </div>
+  </section>
+</main>
+
+<div id="toast" hidden></div>
+<footer>Açık kaynak · <a href="https://github.com/oomer583/havuz">github.com/oomer583/havuz</a> · <a href="privacy.html">Gizlilik</a></footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>

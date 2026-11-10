@@ -1,0 +1,35 @@
+:root { color-scheme: dark; --bg:#0e1116; --card:#161b22; --line:#2a313c; --fg:#e6edf3; --dim:#8b949e; --acc:#3fb950; --bad:#f85149; }
+* { box-sizing: border-box }
+body { margin:0; font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--fg) }
+header, main, footer { max-width:760px; margin:0 auto; padding:16px }
+header h1 { margin:8px 0 0; font-size:28px; letter-spacing:.5px }
+header p, .meta { color:var(--dim); margin:4px 0 }
+h2 { font-size:18px; margin:0 0 8px }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:0 0 16px }
+.row { display:flex; justify-content:space-between; align-items:center; gap:8px }
+button { font:inherit; background:#21262d; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px 14px; cursor:pointer }
+button:hover { border-color:#8b949e }
+button:disabled { opacity:.5; cursor:wait }
+button.primary { background:var(--acc); color:#04120a; border:0; font-weight:600; padding:12px 18px }
+button.danger { color:var(--bad) }
+form { display:grid; gap:12px; max-width:420px }
+label { display:grid; gap:4px }
+input[type=password] { font:inherit; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0d1117; color:var(--fg) }
+.warn { background:#2d1d00; border:1px solid #6e4b00; padding:10px; border-radius:8px }
+ul { list-style:none; padding:0; margin:0 }
+li { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:10px 0; border-top:1px solid var(--line) }
+li:first-child { border-top:0 }
+li .email, li .name { flex:1 1 220px; overflow-wrap:anywhere }
+li.empty { color:var(--dim) }
+li.bad .meta, .bad { color:var(--bad) }
+.bar { flex:1 1 140px; height:8px; background:#30363d; border-radius:4px; overflow:hidden }
+.bar i { display:block; height:100%; background:var(--acc) }
+.free { color:var(--dim); min-width:90px; text-align:right }
+#drop { display:grid; place-items:center; text-align:center; gap:4px; padding:32px 12px; border:2px dashed var(--line); border-radius:12px; cursor:pointer }
+#drop.hover { border-color:var(--acc); background:#0f2417 }
+#drop.off { opacity:.4; pointer-events:none }
+progress { flex:1 1 160px; accent-color:var(--acc) }
+#toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); max-width:92vw; background:#21262d; border:1px solid var(--line); padding:10px 16px; border-radius:10px; box-shadow:0 8px 24px #0008 }
+#toast.bad { border-color:var(--bad) }
+footer { color:var(--dim); font-size:14px }
+a { color:#58a6ff }

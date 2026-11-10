@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>havuz – privacy</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><h1>havuz – privacy policy</h1></header>
+<main class="card">
+<p><b>Short version: havuz has no server that sees your files, your password or your Google data.</b></p>
+<h2>What happens on your device</h2>
+<p>Files you add are encrypted in your browser with AES-256-GCM, using a key made from a password only you know. The encrypted pieces are uploaded directly from your browser to the Google Drive accounts you connected.</p>
+<h2>What havuz can access in Google Drive</h2>
+<p>havuz asks only for the <code>drive.file</code> permission. It can see and manage only the files havuz itself created (its encrypted pieces and the encrypted file list in a folder named "havuz"). It cannot see any other file in your Drive.</p>
+<h2>The one server-side piece</h2>
+<p>Google issues long-lived access only together with a secret that cannot be shipped to browsers. A small function adds that secret and forwards the request to Google. It receives the token request, never file data, and stores and logs nothing. Your long-lived Google tokens are kept only inside your encrypted file list, in your own Drive.</p>
+<h2>What we keep</h2>
+<p>Nothing. No accounts, no analytics, no cookies. Your browser remembers only the email address of your main account, to suggest it at sign-in.</p>
+<h2>Removing access</h2>
+<p>Remove havuz at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>. Deleting the "havuz" folder in each Drive removes all stored data.</p>
+<p>Use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.</p>
+<p>Source code: <a href="https://github.com/oomer583/havuz">github.com/oomer583/havuz</a></p>
+</main>
+</body>
+</html>
