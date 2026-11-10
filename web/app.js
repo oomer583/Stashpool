@@ -293,9 +293,15 @@ function render() {
   }
 }
 
-async function onAddAccount() {
+async function onAddAccount(ev) {
+  ev?.preventDefault()
+  const want = $('#add-email').value.trim().toLowerCase()
+  if (want && state.tokens[want]?.refresh) return toast(want + ' zaten bağlı.')
   try {
-    const email = await connectGoogle({ consent: true })
+    // with a hint Google opens straight to that account's sign-in
+    const email = await connectGoogle({ consent: true, hint: want })
+    if (want && email.toLowerCase() !== want) toast(`Not: ${want} yerine ${email} bağlandı.`, true)
+    $('#add-email').value = ''
     if (!state.tokens[email].refresh) throw new Error('Google kalıcı izin vermedi; myaccount.google.com/permissions adresinden havuz iznini kaldırıp tekrar dene.')
     await saveIndex()
     render()
@@ -372,7 +378,7 @@ async function remove(f) {
 $('#signin').onclick = onSignIn
 $('#unlock-form').onsubmit = onUnlock
 $('#create-form').onsubmit = onCreate
-$('#add-account').onclick = onAddAccount
+$('#add-form').onsubmit = onAddAccount
 $('#pick').onchange = e => { enqueue(e.target.files); e.target.value = '' }
 const drop = $('#drop')
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover') }

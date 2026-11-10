@@ -33,3 +33,5 @@ progress { flex:1 1 160px; accent-color:var(--acc) }
 #toast.bad { border-color:var(--bad) }
 footer { color:var(--dim); font-size:14px }
 a { color:#58a6ff }
+#add-form { margin:0 0 4px; flex-wrap:wrap }
+#add-email { flex:1 1 220px; font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:#0d1117; color:var(--fg) }

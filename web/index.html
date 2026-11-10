@@ -37,7 +37,11 @@
 
   <section class="screen" id="main" hidden>
     <div class="card">
-      <div class="row"><h2>Hesaplar</h2><button id="add-account">+ Google hesabı ekle</button></div>
+      <h2>Hesaplar</h2>
+      <form id="add-form" class="row">
+        <input id="add-email" type="email" placeholder="eklenecek hesabın e-postası" autocomplete="off">
+        <button id="add-account">+ Google hesabı ekle</button>
+      </form>
       <p id="summary" class="meta"></p>
       <ul id="accounts"></ul>
     </div>
