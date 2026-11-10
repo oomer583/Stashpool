@@ -352,10 +352,13 @@ function render() {
     list.append(row)
   }
   const frees = accs.map(e => state.quotas[e]?.free || 0)
-  $('#summary').textContent = accs.length >= 3
-    ? `${accs.length} hesap · ${human(total)} boş · paritelı kullanılabilir: ${human(core.usable(frees))}`
-    : `${accs.length} hesap bağlı · parite için en az 3 hesap gerekiyor`
-  $('#drop').classList.toggle('off', accs.length < 3)
+  const use = human(core.usable(frees))
+  $('#summary').textContent =
+    accs.length === 1 ? `1 hesap · ${use} kullanılabilir · KORUMASIZ: bu hesap kaybolursa dosyalar gider. Bir hesap daha ekle.`
+    : accs.length === 2 ? `2 hesap · her dosya iki hesapta da durur · ${use} kullanılabilir · 3. hesapla alan büyür`
+    : `${accs.length} hesap · ${human(total)} boş · hesap kaybına dayanıklı ${use} kullanılabilir`
+  $('#summary').classList.toggle('bad', accs.length === 1)
+  $('#drop').classList.toggle('off', accs.length < 1)
 
   const files = $('#files'); files.replaceChildren()
   if (!state.index.files.length) files.append(el('li', { class: 'empty', text: 'Henüz dosya yok.' }))

@@ -111,9 +111,27 @@ await test('failed upload leaves nothing behind', async () => {
   assert.equal(be.files.size, 0)
 })
 
-await test('fewer than 3 accounts is refused', async () => {
-  const be = new Fake({ a: 500 * MB, b: 500 * MB }), { data, readAt } = source(MB)
-  await assert.rejects(core.putFile({ name: 'x', size: data.length, readAt, backend: be, accounts: ['a', 'b'], key }), /fewer than 3/)
+await test('1 account: stored as is, no protection, clear error when lost', async () => {
+  const be = new Fake({ a: 500 * MB }), { data, readAt } = source(9 * MB)
+  const entry = await core.putFile({ name: 'x', size: data.length, readAt, backend: be, accounts: ['a'], key })
+  assert.ok(entry.stripes.every(s => s.parity === null && s.shards.length === 1))
+  assert.deepEqual(await readAll(entry, be), data)
+  await assert.rejects(readAll(entry, be, new Set(['a'])), /without protection/)
+  await core.removeFile({ entry, backend: be })
+  assert.equal(be.files.size, 0)
+})
+
+await test('2 accounts: every piece on both, survives losing either', async () => {
+  const be = new Fake({ a: 500 * MB, b: 500 * MB }), { data, readAt } = source(11 * MB)
+  const entry = await core.putFile({ name: 'x', size: data.length, readAt, backend: be, accounts: ['a', 'b'], key })
+  for (const lost of ['a', 'b']) assert.deepEqual(await readAll(entry, be, new Set([lost])), data)
+})
+
+await test('usable space: 1 account = its space, 2 = half, 3 = two thirds', async () => {
+  const c = core.CHUNK + 64
+  assert.ok(core.usable([100 * c]) > 99 * core.CHUNK)
+  assert.equal(core.usable([100 * c, 100 * c]), 100 * core.CHUNK)
+  assert.equal(core.usable([100 * c, 100 * c, 100 * c]), 200 * core.CHUNK)
 })
 
 await test('remove deletes every piece', async () => {

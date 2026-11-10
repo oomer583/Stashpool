@@ -69,20 +69,27 @@ export function xorParity(shards) {
   return p
 }
 
-// accounts that can still take a shard, most free first
+// accounts that can still take a shard, most free first.
+// 1 account in the pool: no protection possible, the data goes there as is.
+// 2+ accounts: one parity shard per stripe (with 2 that is simply a copy).
 export function pickStripe(accounts, free, shardSize) {
   const room = accounts.filter(a => free[a] >= shardSize).sort((a, b) => free[b] - free[a])
-  if (room.length < 3) throw new Error('fewer than 3 accounts have room left; add accounts or free some space')
+  if (accounts.length === 1) {
+    if (!room.length) throw new Error('the account is full')
+    return { parity: null, data: room }
+  }
+  if (room.length < 2) throw new Error('fewer than 2 accounts have room left; add an account or free some space')
   return { parity: room[0], data: room.slice(1) }
 }
 
 // how much plain data fits, playing the placement rule forward
 export function usable(freeList) {
+  if (freeList.length === 1) return Math.max(0, freeList[0] - 64 * 1024)
   const units = freeList.map(f => Math.floor(f / (CHUNK + 64)))
   let total = 0
   for (;;) {
     const room = units.map((u, i) => [u, i]).filter(([u]) => u > 0).sort((a, b) => b[0] - a[0])
-    if (room.length < 3) return total * CHUNK
+    if (room.length < 2) return total * CHUNK
     const steps = Math.min(room[room.length - 1][0], 64)
     for (const [, i] of room) units[i] -= steps
     total += steps * (room.length - 1)
@@ -93,7 +100,7 @@ export function usable(freeList) {
 export async function putFile({ name, size, readAt, backend, accounts, key, onProgress = () => {} }) {
   const free = {}
   for (const a of accounts) free[a] = await backend.free(a)
-  if (accounts.length >= 3 && size > usable(accounts.map(a => free[a]))) {
+  if (size > usable(accounts.map(a => free[a]))) {
     throw new Error(`not enough space for ${name}`)
   }
   const entry = { name, size, created: Date.now(), stripes: [] }
@@ -107,7 +114,6 @@ export async function putFile({ name, size, readAt, backend, accounts, key, onPr
       const plain = await readAt(offset, Math.min(k * CHUNK, size - offset))
       const sealed = await encrypt(key, plain)
       const shards = splitEven(sealed, k)
-      const parity = xorParity(shards)
       const stripe = { len: sealed.length, shards: [], parity: null }
       const send = async (account, bytes) => {
         const id = await backend.upload(account, `${entry.created}.${String(piece++).padStart(5, '0')}.hvz`, bytes)
@@ -116,7 +122,7 @@ export async function putFile({ name, size, readAt, backend, accounts, key, onPr
         return { account, id, size: bytes.length, sha256: await sha256hex(bytes) }
       }
       for (let i = 0; i < k; i++) stripe.shards.push(await send(plan.data[i], shards[i]))
-      stripe.parity = await send(plan.parity, parity)
+      if (plan.parity) stripe.parity = await send(plan.parity, xorParity(shards))
       entry.stripes.push(stripe)
       offset += plain.length
       onProgress(offset, size)
@@ -152,6 +158,7 @@ export async function* readStripes({ entry, backend, key, lost = new Set(), onRe
       shards.push(b)
     }
     if (missing >= 0) {
+      if (!st.parity) throw new Error(`stripe ${si + 1}: the piece on ${st.shards[missing].account} is gone and this file was stored without protection (only 1 account)`)
       const p = await fetchOk(st.parity)
       if (!p) throw new Error(`stripe ${si + 1}: piece on ${st.shards[missing].account} and the parity on ${st.parity.account} are both gone`)
       const rebuilt = p.slice()
@@ -167,7 +174,7 @@ export async function* readStripes({ entry, backend, key, lost = new Set(), onRe
 }
 
 export async function removeFile({ entry, backend }) {
-  for (const st of entry.stripes) for (const c of [...st.shards, st.parity]) {
+  for (const st of entry.stripes) for (const c of [...st.shards, st.parity].filter(Boolean)) {
     try { await backend.remove(c.account, c.id) } catch {}
   }
 }
