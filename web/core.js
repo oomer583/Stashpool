@@ -224,6 +224,24 @@ export async function setPassword(vault, password) {
   vault.wrapP = await encrypt(await deriveKey(password, vault.salt), vault.master)
 }
 
+// a new recovery code; the old one stops working once the index is saved
+export async function setRecovery(vault) {
+  const recovery = makeRecoveryCode()
+  vault.wrapR = await encrypt(await deriveKey(normRecovery(recovery), vault.salt), vault.master)
+  return recovery
+}
+
+// true if this password opens this vault (for "type your current password" checks)
+export async function checkPassword(vault, password) {
+  try { await decrypt(await deriveKey(password, vault.salt), vault.wrapP); return true } catch { return false }
+}
+
+// the 16-byte salt in an index file's header: different for every pool, readable without a password
+export function poolTag(bytes) {
+  return vaultFormat(bytes) === 2 ? Array.from(bytes.subarray(4, 20), b => b.toString(16).padStart(2, '0')).join('') : null
+}
+export const vaultTag = vault => Array.from(vault.salt, b => b.toString(16).padStart(2, '0')).join('')
+
 export async function sealVault(vault, index) {
   const body = await encrypt(vault.key, new TextEncoder().encode(JSON.stringify(index)))
   const out = new Uint8Array(4 + 16 + 2 * WRAP + body.length)

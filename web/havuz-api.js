@@ -19,7 +19,7 @@
 //
 // Every error is an Error with a Turkish .message (safe to show as is) and a
 // short .code a UI can react to: popup_blocked, popup_closed, wrong_password,
-// wrong_recovery, weak_password, exists, no_space, not_found, cancelled, google.
+// wrong_recovery, weak_password, exists, other_pool, no_space, not_found, cancelled, google.
 
 import * as core from './core.js'
 import { CLIENT_ID, TOKEN_ENDPOINT, SCOPE } from './config.js'
@@ -230,6 +230,15 @@ async function enter(vault, index) {
   changed()
 }
 
+// does this account's Drive hold the list of a different pool? (the header tag is readable without a password)
+async function otherPool(email) {
+  const id = await findIndex(email)
+  if (!id) return false
+  const bytes = await backend.download(email, id)
+  if (core.poolTag(bytes) === core.vaultTag(state.vault)) { state.indexIds[email] = id; return false }
+  return true
+}
+
 const findFile = name => state.index?.files.find(f => f.name === name)
 
 // ---------- the public API ----------
@@ -291,6 +300,22 @@ export const havuz = {
     await saveIndex()
   },
 
+  /** Change the password; needs the current one. The recovery code keeps working. */
+  async changePassword(current, next) {
+    if (!(await core.checkPassword(state.vault, current))) throw fail('wrong_password', 'Mevcut şifre yanlış.')
+    if (!next || next.length < MIN_PASSWORD) throw fail('weak_password', `Yeni şifre en az ${MIN_PASSWORD} karakter olsun.`)
+    await core.setPassword(state.vault, next)
+    await saveIndex()
+  },
+
+  /** Make a new recovery code (the old one stops working); needs the current password. Returns the code. */
+  async newRecoveryCode(current) {
+    if (!(await core.checkPassword(state.vault, current))) throw fail('wrong_password', 'Mevcut şifre yanlış.')
+    const code = await core.setRecovery(state.vault)
+    await saveIndex()
+    return code
+  },
+
   /**
    * Add a Google account signed in anywhere (another browser profile, a phone):
    * onCode({ code, url }) is called with a code to type at url. Resolves with the
@@ -309,7 +334,14 @@ export const havuz = {
         const tok = { access: t.access_token, exp: Date.now() + (t.expires_in - 60) * 1000, refresh: t.refresh_token, kind: 'device' }
         const about = await driveJSON(tok.access, 'GET', 'https://www.googleapis.com/drive/v3/about?fields=user(emailAddress),storageQuota')
         const email = about.user.emailAddress
+        if (state.tokens[email]?.refresh) throw fail('exists', `${email} zaten bu havuzda.`)
         state.tokens[email] = tok
+        // one Google account belongs to one pool: refuse an account that holds another pool's list
+        const other = await otherPool(email).catch(() => false)
+        if (other) {
+          delete state.tokens[email]; delete folders[email]; delete state.indexIds[email]
+          throw fail('other_pool', `${email} başka bir Stashpool havuzuna bağlı. Bir hesap tek havuzda olabilir. Bu hesabı kullanmak istiyorsan önce o hesabın Google Drive'ındaki "havuz" klasörünü sil.`)
+        }
         setQuota(email, about.storageQuota)
         await saveIndex()
         changed()

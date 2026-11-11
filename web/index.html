@@ -172,7 +172,7 @@
         <!-- 3. EKRAN: Kurtarma Anahtarı (Recovery Key) -->
         <section id="screen-recovery" class="screen-view hidden">
           <div class="auth-card">
-            <div class="card-badge badge-success">Havuz Oluşturuldu</div>
+            <div class="card-badge badge-success" id="recovery-badge">Havuz Oluşturuldu</div>
             <h2 class="auth-title">Kurtarma Anahtarın</h2>
             <p class="auth-desc">Şifreni unutursan havuzunu <strong>sadece bu anahtar</strong> açabilir. Başka hiçbir yedek bulunmaz.</p>
 
@@ -189,14 +189,11 @@
               </button>
             </div>
 
-            <div class="checkbox-container">
-              <label class="custom-checkbox">
-                <input type="checkbox" id="recovery-confirmed-checkbox" />
-                <span class="checkbox-box" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span class="checkbox-text">Bu anahtarı güvenli bir yere kaydettim</span>
-              </label>
+            <button type="button" id="download-recovery-key-btn" class="btn btn-secondary btn-block">Anahtarı dosya olarak indir</button>
+
+            <div class="form-group recovery-check">
+              <label for="recovery-last4" class="form-label">Kaydettiğini göster: anahtarın son 4 karakterini yaz</label>
+              <input type="text" id="recovery-last4" class="form-input font-mono" maxlength="4" autocomplete="off" spellcheck="false" placeholder="Son 4 karakter" />
             </div>
 
             <button type="button" id="recovery-continue-btn" class="btn btn-primary btn-block" disabled>
@@ -293,10 +290,18 @@
           </div>
         </section>
 
-        <!-- 6. EKRAN: Ana Ekran (Main Dashboard) -->
+        <!-- 6. EKRAN: Ana Ekran (sekmeli) -->
         <section id="screen-dashboard" class="screen-view hidden">
           <div class="dashboard-layout">
 
+            <div class="tab-bar" role="tablist" aria-label="Bölümler">
+              <button type="button" role="tab" id="tab-files" class="tab-btn" aria-selected="true" aria-controls="panel-files" data-tab="files">Dosyalar</button>
+              <button type="button" role="tab" id="tab-accounts" class="tab-btn" aria-selected="false" aria-controls="panel-accounts" data-tab="accounts" tabindex="-1">Hesaplar <span class="tab-count" id="tab-accounts-count">0</span></button>
+              <button type="button" role="tab" id="tab-settings" class="tab-btn" aria-selected="false" aria-controls="panel-settings" data-tab="settings" tabindex="-1">Ayarlar</button>
+            </div>
+
+            <!-- SEKME: Dosyalar -->
+            <div id="panel-files" class="tab-panel" role="tabpanel" aria-labelledby="tab-files">
             <!-- Doluluk ve Durum Kartı (Hero Storage Card) -->
             <div class="storage-card" id="storage-card">
               <div class="storage-card-header">
@@ -394,31 +399,97 @@
               </div>
             </div>
 
-            <!-- Hesaplar Katlanabilir Bölümü (Accordion) -->
-            <div class="accounts-section">
-              <div class="accordion-card">
-                <button type="button" id="accounts-toggle-btn" class="accordion-header" aria-expanded="true" aria-controls="accounts-body">
-                  <div class="accordion-title-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    <span class="accordion-title" id="accounts-header-title">Hesaplar (4)</span>
-                  </div>
-                  <div class="accordion-actions">
-                    <button type="button" id="open-add-account-btn" class="btn btn-sm btn-secondary">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                      <span>Hesap ekle</span>
-                    </button>
-                    <div class="accordion-chevron" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </div>
-                  </div>
-                </button>
+            </div>
 
-                <div id="accounts-body" class="accordion-body">
-                  <div id="accounts-list-container" class="accounts-grid">
-                    <!-- Dinamik hesap kartları JS ile doldurulur -->
-                  </div>
+            <!-- SEKME: Hesaplar -->
+            <div id="panel-accounts" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-accounts">
+              <div class="section-header-row">
+                <div class="section-title-wrap">
+                  <h3 class="section-title" id="accounts-header-title">Bağlı hesaplar</h3>
+                </div>
+                <button type="button" id="open-add-account-btn" class="btn btn-sm btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Hesap ekle</span>
+                </button>
+              </div>
+              <p class="panel-note">Her Google hesabı yalnızca tek bir Stashpool havuzuna bağlanabilir. 3 ve daha fazla hesapta bir hesap kaybolsa da dosyaların kurtulur.</p>
+              <div id="accounts-list-container" class="accounts-grid">
+                <!-- JS ile doldurulur -->
+              </div>
+            </div>
+
+            <!-- SEKME: Ayarlar -->
+            <div id="panel-settings" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-settings">
+
+              <div class="settings-card">
+                <h3 class="settings-title">Hesap</h3>
+                <div class="settings-row">
+                  <span class="settings-label">Ana Google hesabı</span>
+                  <span class="settings-value" id="settings-main-email">-</span>
+                </div>
+                <div class="settings-row">
+                  <span class="settings-label">Havuzu kilitle</span>
+                  <button type="button" id="settings-lock-btn" class="btn btn-sm btn-secondary">Kilitle</button>
                 </div>
               </div>
+
+              <div class="settings-card">
+                <h3 class="settings-title">Şifreyi değiştir</h3>
+                <p class="settings-desc">Dosyaların yeniden şifrelenmez, sadece havuzu açan şifre değişir. Kurtarma anahtarın çalışmaya devam eder.</p>
+                <form id="change-pw-form" class="auth-form" novalidate>
+                  <input type="text" name="username" autocomplete="username" class="sr-only" tabindex="-1" aria-hidden="true" id="change-pw-username" />
+                <div class="form-group">
+                  <label for="change-pw-current" class="form-label">Mevcut şifre</label>
+                  <div class="input-password-wrap">
+                    <input type="password" id="change-pw-current" autocomplete="current-password" class="form-input" placeholder="Şu anki şifren" required />
+                    <button type="button" class="btn-toggle-pw" data-target="change-pw-current" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                      <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="change-pw-new" class="form-label">Yeni şifre</label>
+                  <div class="input-password-wrap">
+                    <input type="password" id="change-pw-new" autocomplete="new-password" class="form-input" placeholder="En az 10 karakter" required />
+                    <button type="button" class="btn-toggle-pw" data-target="change-pw-new" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                      <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="change-pw-confirm" class="form-label">Yeni şifre tekrarı</label>
+                  <div class="input-password-wrap">
+                    <input type="password" id="change-pw-confirm" autocomplete="new-password" class="form-input" placeholder="Yeni şifreni tekrar yaz" required />
+                    <button type="button" class="btn-toggle-pw" data-target="change-pw-confirm" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                      <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                  <button type="submit" id="change-pw-submit" class="btn btn-primary">Şifreyi değiştir</button>
+                </form>
+              </div>
+
+              <div class="settings-card">
+                <h3 class="settings-title">Kurtarma anahtarı</h3>
+                <p class="settings-desc">Anahtarını kaybettiysen yenisini oluştur. <strong>Eski anahtar o an çalışmaz olur.</strong></p>
+                <form id="new-recovery-form" class="auth-form" novalidate>
+                <div class="form-group">
+                  <label for="new-recovery-pw" class="form-label">Mevcut şifre</label>
+                  <div class="input-password-wrap">
+                    <input type="password" id="new-recovery-pw" autocomplete="current-password" class="form-input" placeholder="Onay için şifren" required />
+                    <button type="button" class="btn-toggle-pw" data-target="new-recovery-pw" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                      <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                  <button type="submit" id="new-recovery-submit" class="btn btn-secondary">Yeni kurtarma anahtarı oluştur</button>
+                </form>
+              </div>
+
             </div>
 
           </div>

@@ -173,4 +173,23 @@ await test('vault: old test format is detected, not misread', async () => {
   await assert.rejects(core.openVault(new TextEncoder().encode('HVZ1' + 'x'.repeat(200)), 'p'), /old test format/)
 })
 
+await test('vault: new recovery code replaces the old one; password check', async () => {
+  const { vault, recovery } = await core.createVault('my password 1')
+  assert.equal(await core.checkPassword(vault, 'my password 1'), true)
+  assert.equal(await core.checkPassword(vault, 'nope'), false)
+  const fresh = await core.setRecovery(vault)
+  const sealed = await core.sealVault(vault, { files: [] })
+  await assert.rejects(core.openVault(sealed, recovery, { recovery: true }), /wrong recovery code/)
+  await core.openVault(sealed, fresh, { recovery: true })
+  await core.openVault(sealed, 'my password 1')
+})
+
+await test('pool tag: same pool same tag, other pool other tag', async () => {
+  const a = await core.createVault('password aaaa'), b = await core.createVault('password bbbb')
+  const sa = await core.sealVault(a.vault, {}), sb = await core.sealVault(b.vault, {})
+  assert.equal(core.poolTag(sa), core.vaultTag(a.vault))
+  assert.notEqual(core.poolTag(sb), core.vaultTag(a.vault))
+  assert.equal(core.poolTag(new TextEncoder().encode('HVZ1xxxx')), null)
+})
+
 console.log(`\n${passed} passed`)

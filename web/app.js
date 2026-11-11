@@ -358,15 +358,7 @@ function initCreateScreen() {
       const recoveryKey = await havuz.createPool(password);
 
       // 3. Ekrana geç (Kurtarma Anahtarı)
-      const keyTextEl = document.getElementById('recovery-key-text');
-      if (keyTextEl) keyTextEl.textContent = recoveryKey;
-
-      const checkbox = document.getElementById('recovery-confirmed-checkbox');
-      const continueBtn = document.getElementById('recovery-continue-btn');
-      if (checkbox) checkbox.checked = false;
-      if (continueBtn) continueBtn.disabled = true;
-
-      navigateTo('recovery');
+      showRecoveryScreen(recoveryKey, 'files');
       showToast('Havuzun başarıyla oluşturuldu! Kurtarma anahtarını kaydet.', 'success');
     } catch (err) {
       showToast(err.message || 'Havuz oluşturulamadı.', 'error');
@@ -379,41 +371,60 @@ function initCreateScreen() {
 // ============================================================
 // 3. EKRAN: Kurtarma Anahtarı
 // ============================================================
+let recoveryReturnTab = 'files';
+const lastFour = key => key.replace(/[^0-9A-Za-z]/g, '').slice(-4).toUpperCase();
+
+// show a recovery code; the user can only go on after proving they saved it (its last 4 characters)
+function showRecoveryScreen(key, returnTab) {
+  recoveryReturnTab = returnTab;
+  document.getElementById('recovery-key-text').textContent = key;
+  document.getElementById('recovery-badge').textContent = returnTab === 'settings' ? 'Yeni Anahtar' : 'Havuz Oluşturuldu';
+  const input = document.getElementById('recovery-last4');
+  input.value = '';
+  document.getElementById('recovery-continue-btn').disabled = true;
+  navigateTo('recovery');
+}
+
 function initRecoveryScreen() {
   const copyBtn = document.getElementById('copy-recovery-key-btn');
   const copyLabel = document.getElementById('copy-key-label');
   const keyTextEl = document.getElementById('recovery-key-text');
-  const checkbox = document.getElementById('recovery-confirmed-checkbox');
+  const downloadBtn = document.getElementById('download-recovery-key-btn');
+  const last4 = document.getElementById('recovery-last4');
   const continueBtn = document.getElementById('recovery-continue-btn');
 
-  if (copyBtn) {
-    copyBtn.addEventListener('click', async () => {
-      const key = keyTextEl.textContent.trim();
-      try {
-        await navigator.clipboard.writeText(key);
-        copyLabel.textContent = 'Kopyalandı!';
-        showToast('Kurtarma anahtarı panoya kopyalandı.', 'success');
-        setTimeout(() => {
-          copyLabel.textContent = 'Kopyala';
-        }, 2200);
-      } catch (err) {
-        showToast('Anahtar kopyalanamadı, lütfen elle seçip kopyala.', 'error');
-      }
-    });
-  }
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(keyTextEl.textContent.trim());
+      copyLabel.textContent = 'Kopyalandı!';
+      showToast('Kurtarma anahtarı panoya kopyalandı. Şimdi güvenli bir yere yapıştır.', 'success');
+      setTimeout(() => { copyLabel.textContent = 'Kopyala'; }, 2200);
+    } catch {
+      showToast('Anahtar kopyalanamadı, elle seçip kopyala.', 'error');
+    }
+  });
 
-  if (checkbox && continueBtn) {
-    checkbox.addEventListener('change', () => {
-      continueBtn.disabled = !checkbox.checked;
-    });
+  downloadBtn?.addEventListener('click', () => {
+    const key = keyTextEl.textContent.trim();
+    const text = `Stashpool kurtarma anahtarı\n\n${key}\n\nHesap: ${activeUserEmail}\nŞifreni unutursan havuzunu sadece bu anahtar açar. Kimseyle paylaşma.\n`;
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'stashpool-kurtarma-anahtari.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
 
-    continueBtn.addEventListener('click', () => {
-      if (checkbox.checked) {
-        navigateTo('dashboard');
-        showToast('Havuzuna hoş geldin! Dosyalarını güvenle yükleyebilirsin.', 'success');
-      }
-    });
-  }
+  last4?.addEventListener('input', () => {
+    continueBtn.disabled = last4.value.trim().toUpperCase() !== lastFour(keyTextEl.textContent);
+  });
+
+  continueBtn?.addEventListener('click', () => {
+    if (last4.value.trim().toUpperCase() !== lastFour(keyTextEl.textContent)) return;
+    keyTextEl.textContent = '';
+    navigateTo('dashboard');
+    selectTab(recoveryReturnTab);
+    showToast(recoveryReturnTab === 'settings' ? 'Yeni kurtarma anahtarın etkin. Eskisi artık çalışmaz.' : 'Havuzuna hoş geldin!', 'success');
+  });
 }
 
 // ============================================================
@@ -744,9 +755,14 @@ function renderAccountsList(accounts) {
   const container = document.getElementById('accounts-list-container');
   const headerTitle = document.getElementById('accounts-header-title');
 
-  if (headerTitle) {
-    headerTitle.textContent = `Hesaplar (${accounts.length})`;
-  }
+  if (headerTitle) headerTitle.textContent = 'Bağlı hesaplar';
+  const tabCount = document.getElementById('tab-accounts-count');
+  if (tabCount) tabCount.textContent = String(accounts.length);
+  const mainEmail = document.getElementById('settings-main-email');
+  const main = accounts.find(a => a.main);
+  if (mainEmail && main) mainEmail.textContent = main.email;
+  const pwUser = document.getElementById('change-pw-username');
+  if (pwUser && main) pwUser.value = main.email;
 
   if (!container) return;
   container.innerHTML = '';
@@ -1164,6 +1180,84 @@ function initControls() {
   }
 }
 
+// ============================================================
+// Sekmeler ve Ayarlar
+// ============================================================
+const TABS = ['files', 'accounts', 'settings'];
+
+function selectTab(name, focus = false) {
+  for (const t of TABS) {
+    const btn = document.getElementById(`tab-${t}`);
+    const panel = document.getElementById(`panel-${t}`);
+    const on = t === name;
+    btn.setAttribute('aria-selected', String(on));
+    btn.tabIndex = on ? 0 : -1;
+    panel.classList.toggle('hidden', !on);
+    if (on && focus) btn.focus();
+  }
+}
+
+function initTabs() {
+  for (const t of TABS) {
+    document.getElementById(`tab-${t}`).addEventListener('click', () => selectTab(t));
+  }
+  document.querySelector('.tab-bar')?.addEventListener('keydown', e => {
+    const cur = TABS.findIndex(t => document.getElementById(`tab-${t}`).getAttribute('aria-selected') === 'true');
+    let next = null;
+    if (e.key === 'ArrowRight') next = (cur + 1) % TABS.length;
+    else if (e.key === 'ArrowLeft') next = (cur - 1 + TABS.length) % TABS.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = TABS.length - 1;
+    if (next === null) return;
+    e.preventDefault();
+    selectTab(TABS[next], true);
+  });
+}
+
+function initSettings() {
+  document.getElementById('settings-lock-btn')?.addEventListener('click', () => lockPoolBtn.click());
+
+  const pwForm = document.getElementById('change-pw-form');
+  pwForm?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const cur = document.getElementById('change-pw-current');
+    const next = document.getElementById('change-pw-new');
+    const conf = document.getElementById('change-pw-confirm');
+    const btn = document.getElementById('change-pw-submit');
+    if (next.value.length < 10) { showToast('Yeni şifre en az 10 karakter olsun.', 'error'); next.focus(); return; }
+    if (next.value !== conf.value) { showToast('Yeni şifreler eşleşmiyor.', 'error'); conf.focus(); return; }
+    btn.disabled = true;
+    try {
+      await havuz.changePassword(cur.value, next.value);
+      pwForm.reset();
+      showToast('Şifren değişti. Tarayıcın kaydetmeyi sorarsa yenisini kaydet.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Şifre değiştirilemedi.', 'error');
+      if (err.code === 'wrong_password') cur.focus();
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  const recForm = document.getElementById('new-recovery-form');
+  recForm?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const pw = document.getElementById('new-recovery-pw');
+    const btn = document.getElementById('new-recovery-submit');
+    btn.disabled = true;
+    try {
+      const code = await havuz.newRecoveryCode(pw.value);
+      recForm.reset();
+      showRecoveryScreen(code, 'settings');
+    } catch (err) {
+      showToast(err.message || 'Yeni anahtar oluşturulamadı.', 'error');
+      if (err.code === 'wrong_password') pw.focus();
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/[&<>"']/g, m => ({
@@ -1192,6 +1286,8 @@ function init() {
   initDeleteConfirmModal();
   initSearchAndAccordion();
   initControls();
+  initTabs();
+  initSettings();
 
   // havuz.onChange dinleyicisini bağla
   havuz.onChange(status => {

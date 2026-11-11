@@ -801,7 +801,9 @@ a:hover {
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--primary);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
 }
 
 .btn-copy {
@@ -1903,3 +1905,129 @@ a:hover {
 /* never let one long value push the page sideways on phones */
 html, body { max-width: 100%; overflow-x: hidden; }
 .storage-percent-label, .storage-sub-label, .file-name, .user-email-text { overflow-wrap: anywhere; }
+
+/* ===================================================================
+   SEKMELER ve AYARLAR
+   =================================================================== */
+.tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  position: sticky;
+  top: 0.5rem;
+  z-index: 5;
+}
+
+.tab-btn {
+  flex: 1;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.tab-btn:hover { color: var(--text-primary); }
+
+.tab-btn[aria-selected="true"] {
+  background: var(--bg-surface);
+  color: var(--primary-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.tab-count {
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: var(--radius-full);
+  background: var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  line-height: 1.4rem;
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tab-panel.hidden { display: none; }
+
+.panel-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+#panel-accounts .accounts-grid { padding-top: 0; }
+
+.settings-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.settings-title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.settings-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-row:first-of-type { border-top: 0; }
+
+.settings-label { color: var(--text-secondary); font-size: 0.92rem; }
+
+.settings-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.settings-card .auth-form { max-width: 26rem; }
+
+.recovery-check { margin-top: 0.5rem; }
+
+/* the whole recovery key must be visible: stack the copy button under it */
+.recovery-key-card { flex-wrap: wrap; }
+.recovery-key-card .key-display-wrapper { flex: 1 1 100%; overflow: visible; }
+
+@media (max-width: 480px) {
+  #header-user-email { display: none; }
+}
