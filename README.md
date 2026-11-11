@@ -1,11 +1,11 @@
-# havuz
+# Stashpool
 
 **One big storage pool from many free cloud accounts — that survives losing an account.**
 
 Tools like rclone `union`, CloudNest and Drive-Pool already merge several Google Drive accounts into one place.
 But if one of those accounts gets closed, suspended or locked, every file stored in it is gone.
 
-havuz adds **parity** (the idea behind RAID 5): each file is split across N accounts plus one parity piece.
+Stashpool adds **parity** (the idea behind RAID 5): each file is split across N accounts plus one parity piece.
 If any one account disappears, its pieces are rebuilt from the others.
 
 | Accounts (15 GB each) | Raw space | Usable with 1 parity | Survives |
@@ -16,7 +16,11 @@ If any one account disappears, its pieces are rebuilt from the others.
 
 Copying every file twice would halve your space. Parity only costs one account's worth.
 
-> Use your own accounts. havuz is not a tool for mass-creating accounts.
+> Use your own accounts. Stashpool is not a tool for mass-creating accounts.
+
+**Try it in the browser:** https://stashpool.netlify.app — files are encrypted on your device (AES-256-GCM) and go straight to your own Google Drive accounts; no server ever sees them.
+
+_The project started under the Turkish name "havuz" (pool); the command-line tool and the Drive folder still use that name._
 
 ## Status
 
