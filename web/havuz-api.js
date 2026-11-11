@@ -334,12 +334,17 @@ export const havuz = {
         const tok = { access: t.access_token, exp: Date.now() + (t.expires_in - 60) * 1000, refresh: t.refresh_token, kind: 'device' }
         const about = await driveJSON(tok.access, 'GET', 'https://www.googleapis.com/drive/v3/about?fields=user(emailAddress),storageQuota')
         const email = about.user.emailAddress
-        if (state.tokens[email]?.refresh) throw fail('exists', `${email} zaten bu havuzda.`)
+        const giveBack = () => tokenCall({ revoke: tok.refresh || tok.access }).catch(() => {})
+        if (state.tokens[email]?.refresh) throw fail('exists', `${email} zaten bu havuzda.`) // keep its working permission
         state.tokens[email] = tok
-        // one Google account belongs to one pool: refuse an account that holds another pool's list
-        const other = await otherPool(email).catch(() => false)
+        // one Google account belongs to one pool: refuse an account that holds another pool's list.
+        // If the check itself fails, refuse too (never add an account we could not check).
+        let other
+        try { other = await otherPool(email) } catch { other = 'unknown' }
         if (other) {
           delete state.tokens[email]; delete folders[email]; delete state.indexIds[email]
+          await giveBack() // remove Stashpool from that account's Google permissions again
+          if (other === 'unknown') throw fail('google', `${email} kontrol edilemedi, hesap eklenmedi. Tekrar dene.`)
           throw fail('other_pool', `${email} başka bir Stashpool havuzuna bağlı. Bir hesap tek havuzda olabilir. Bu hesabı kullanmak istiyorsan önce o hesabın Google Drive'ındaki "havuz" klasörünü sil.`)
         }
         setQuota(email, about.storageQuota)
