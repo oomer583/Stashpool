@@ -18,7 +18,7 @@ Copying every file twice would halve your space. Parity only costs one account's
 
 > Use your own accounts. Stashpool is not a tool for mass-creating accounts.
 
-**Try it in the browser:** https://stashpool.netlify.app — files are encrypted on your device (AES-256-GCM) and go straight to your own Google Drive accounts; no server ever sees them.
+**Try it in the browser:** https://stashpool.pages.dev — files are encrypted on your device (AES-256-GCM) and go straight to your own Google Drive accounts; no server ever sees them.
 
 _The project started under the Turkish name "havuz" (pool); the command-line tool and the Drive folder still use that name._
 
@@ -62,3 +62,7 @@ havuz only asks for the `drive.file` scope: it can see the files it created, not
 ## License
 
 MIT
+
+## Hosting the web app yourself
+
+The site is static (`web/`) plus one tiny function that adds the Google client secret to token requests (`lib/token.mjs`). It runs on Cloudflare Pages (`functions/api/token.js`) or Netlify (`netlify/functions/token.mjs`). Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DEVICE_CLIENT_ID` and `DEVICE_CLIENT_SECRET` in the host's environment settings.
