@@ -1,93 +1,511 @@
 <!doctype html>
 <html lang="tr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>havuz</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<header><h1>havuz</h1><p>Ücretsiz Google hesaplarından tek, şifreli, hesap kaybına dayanıklı bir depo.</p></header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>havuz - Güvenli ve Birleşik Bulut Depolama</title>
+    <meta name="description" content="Ücretsiz Google Drive hesaplarınızı tek bir büyük, şifreli ve güvenli depoda birleştiren modern web uygulaması." />
+    <meta property="og:title" content="havuz - Güvenli ve Birleşik Bulut Depolama" />
+    <meta property="og:description" content="Ücretsiz Google Drive hesaplarınızı tek bir büyük, şifreli ve güvenli depoda birleştiren modern web uygulaması." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <!-- Ana Konteyner -->
+    <div id="app" class="app-container">
 
-<main>
-  <section class="screen" id="start">
-    <p>Dosyaların senin cihazında şifrelenir ve doğrudan senin Google Drive hesaplarına gider. Hiçbir sunucu dosyalarını görmez.</p>
-    <button id="signin" class="primary">Ana Google hesabınla giriş yap</button>
-  </section>
+      <!-- Üst Çubuk (Başlık ve Eylemler) -->
+      <header id="app-header" class="app-header">
+        <div class="header-brand">
+          <div class="brand-logo" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" class="brand-svg">
+              <path d="M16 3C16 3 6 13.8 6 19.5C6 25 10.5 29 16 29C21.5 29 26 25 26 19.5C26 13.8 16 3 16 3Z" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M10 20C10.5 22.5 12.8 24.5 16 24.5C19.2 24.5 21.5 22.5 22 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="16" cy="14" r="2.5" fill="currentColor"/>
+            </svg>
+          </div>
+          <span class="brand-name">havuz</span>
+        </div>
 
-  <section class="screen" id="create" hidden>
-    <h2>Yeni havuz: <span class="who"></span></h2>
-    <p class="warn">Bu şifreyi unutursan dosyalar <b>hiç kimse tarafından</b> kurtarılamaz. Şifre yöneticine kaydet.</p>
-    <form id="create-form">
-      <input name="username" autocomplete="username" hidden>
-      <label>Havuz şifresi <input id="create-pass" type="password" autocomplete="new-password" required minlength="10"></label>
-      <label>Tekrar <input id="create-pass2" type="password" autocomplete="new-password" required minlength="10"></label>
-      <button class="primary">Havuzu oluştur</button>
-    </form>
-  </section>
+        <div class="header-actions">
+          <div id="user-pill" class="user-pill hidden">
+            <span class="user-avatar" id="header-user-avatar">A</span>
+            <span class="user-email-text" id="header-user-email"></span>
+          </div>
 
-  <section class="screen" id="unlock" hidden>
-    <h2>Havuzu aç: <span class="who"></span></h2>
-    <form id="unlock-form">
-      <input name="username" autocomplete="username" hidden>
-      <label>Havuz şifresi <input id="unlock-pass" type="password" autocomplete="current-password" required></label>
-      <button id="unlock-btn" class="primary">Aç</button>
-    </form>
-    <p><a href="#" id="forgot">Şifremi unuttum: kurtarma anahtarıyla aç</a></p>
-  </section>
+          <!-- Tema Değiştirici -->
+          <button type="button" id="theme-toggle-btn" class="icon-button" title="Temayı değiştir" aria-label="Temayı değiştir">
+            <svg id="theme-sun-icon" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path>
+              <path d="M12 20v2"></path>
+              <path d="M4.93 4.93l1.41 1.41"></path>
+              <path d="M17.66 17.66l1.41 1.41"></path>
+              <path d="M2 12h2"></path>
+              <path d="M20 12h2"></path>
+              <path d="M6.34 17.66l-1.41 1.41"></path>
+              <path d="M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+            <svg id="theme-moon-icon" class="theme-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+          </button>
 
-  <section class="screen" id="recovery" hidden>
-    <h2>Kurtarma anahtarın</h2>
-    <p class="warn">Şifreni unutursan havuzu <b>sadece bu anahtar</b> açar. Bir kâğıda yaz ya da telefonunda güvenli bir yere kaydet. Bir daha gösterilmeyecek.</p>
-    <p><code id="rec-show" class="big"></code></p>
-    <p><button id="rec-copy" type="button">Kopyala</button></p>
-    <label class="check"><input id="rec-ok" type="checkbox"> Kaydettim</label>
-    <p><button id="rec-continue" class="primary" type="button">Devam</button></p>
-  </section>
+          <!-- Havuzu Kilitle / Çıkış Butonu (Sadece açık havuzda) -->
+          <button type="button" id="lock-pool-btn" class="icon-button hidden" title="Havuzu Kilitle" aria-label="Havuzu Kilitle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
 
-  <section class="screen" id="recover" hidden>
-    <h2>Kurtarma anahtarıyla aç: <span class="who"></span></h2>
-    <form id="recover-form">
-      <input name="username" autocomplete="username" hidden>
-      <label>Kurtarma anahtarı <input id="rec-code" autocomplete="off" required placeholder="XXXX-XXXX-..."></label>
-      <label>Yeni havuz şifresi <input id="rec-pass" type="password" autocomplete="new-password" required minlength="10"></label>
-      <label>Tekrar <input id="rec-pass2" type="password" autocomplete="new-password" required minlength="10"></label>
-      <button id="rec-btn" class="primary">Aç ve yeni şifreyi kaydet</button>
-    </form>
-  </section>
+      <!-- Ana İçerik Alanı (Ekranlar) -->
+      <main id="main-content" class="main-content">
 
-  <section class="screen" id="main" hidden>
-    <div class="card">
-      <h2>Havuz</h2>
-      <div id="gauge-row" class="row"><b id="gauge-pct"></b><span id="gauge-nums" class="meta"></span></div>
-      <div id="gauge" class="bar big"><i></i></div>
-      <p id="summary" class="meta"></p>
-      <details><summary>Hesapları göster (<span id="acc-count"></span>)</summary><ul id="accounts"></ul></details>
-      <div class="row"><span class="meta">Hesabın açık olduğu herhangi bir tarayıcıda ya da telefonda bir kod yazarak bağlanır; şifre gerekmez.</span>
-        <button id="device-add" type="button">+ Hesap ekle</button></div>
-      <div id="device-box" class="warn" hidden>
-        Hesabın <b>açık olduğu</b> tarayıcıda ya da telefonda <a id="device-url" target="_blank" rel="noopener"></a> adresini aç ve bu kodu yaz:
-        <p><code id="device-code" class="big"></code></p>
-        <span class="meta">Onaylanınca hesap kendiliğinden eklenir.</span> <button id="device-cancel" type="button">Vazgeç</button>
+        <!-- 1. EKRAN: Karşılama (Welcome) -->
+        <section id="screen-welcome" class="screen-view">
+          <div class="auth-card">
+            <div class="auth-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none" class="auth-large-icon">
+                <path d="M24 6C24 6 10 20.5 10 28.5C10 36.2 16.3 42 24 42C31.7 42 38 36.2 38 28.5C38 20.5 24 6 24 6Z" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M16 29C17 33 20 35.5 24 35.5C28 35.5 31 33 32 29" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="24" cy="21" r="3.5" fill="currentColor"/>
+              </svg>
+            </div>
+
+            <h1 class="auth-title">Google Drive hesaplarını tek bir büyük depoda birleştir.</h1>
+            <p class="auth-desc">Ücretsiz hesaplarının kapasitelerini bir araya getir, sınırsız güvenlikle dosyalarını sakla.</p>
+
+            <button type="button" id="google-signin-btn" class="btn btn-google">
+              <svg viewBox="0 0 24 24" class="btn-icon-svg" aria-hidden="true">
+                <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2c0 2.8.7 5.4 1.9 7.8l3.7-2.9c-.3-.7-.5-1.5-.5-2.3z"/>
+                <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.3 7.5 23.5 12 23.5z"/>
+              </svg>
+              <span>Google ile giriş yap</span>
+            </button>
+
+            <div class="auth-trust-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="trust-icon" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M9 12l2 2 4-4"></path>
+              </svg>
+              <span>Dosyaların cihazında şifrelenir, hiçbir sunucu göremez.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. EKRAN: Yeni Havuz Oluştur (Create Pool) -->
+        <section id="screen-create" class="screen-view hidden">
+          <div class="auth-card">
+            <div class="card-badge">Yeni Havuz</div>
+            <h2 class="auth-title">Havuzunu Güvenceye Al</h2>
+            <p class="auth-desc">
+              <strong id="create-user-email"></strong> hesabınla havuz oluşturuluyor. Dosyalarını sadece bu şifre açabilir.
+            </p>
+
+            <form id="create-pool-form" class="auth-form" novalidate>
+              <!-- Tarayıcı şifre yöneticisi için gizli kullanıcı adı -->
+              <input type="text" id="create-username-hidden" name="username" autocomplete="username" class="sr-only" tabindex="-1" aria-hidden="true" />
+
+              <div class="form-group">
+                <label for="create-password" class="form-label">Ana Şifre</label>
+                <div class="input-password-wrap">
+                  <input type="password" id="create-password" name="password" autocomplete="new-password" class="form-input" placeholder="En az 10 karakter" required minlength="10" />
+                  <button type="button" class="btn-toggle-pw" data-target="create-password" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                  </button>
+                </div>
+
+                <!-- Güç Göstergesi -->
+                <div class="strength-meter-container" aria-live="polite">
+                  <div class="strength-bar-track">
+                    <div id="strength-bar-fill" class="strength-bar-fill"></div>
+                  </div>
+                  <div class="strength-label-row">
+                    <span id="strength-text" class="strength-text">Çok zayıf</span>
+                    <span id="char-count" class="char-count">0 / 10</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="create-password-confirm" class="form-label">Şifre Tekrarı</label>
+                <div class="input-password-wrap">
+                  <input type="password" id="create-password-confirm" name="password_confirm" autocomplete="new-password" class="form-input" placeholder="Şifreni tekrar yaz" required />
+                  <button type="button" class="btn-toggle-pw" data-target="create-password-confirm" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                  </button>
+                </div>
+                <div id="password-match-error" class="input-hint-error hidden">Şifreler birbiriyle eşleşmiyor.</div>
+              </div>
+
+              <!-- Uyarı Kartı -->
+              <div class="alert-box alert-warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="alert-icon" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div class="alert-content">
+                  <strong class="alert-title">Önemli Hatırlatma</strong>
+                  <p class="alert-desc">Şifreni unutursan kimse kurtaramaz. Lütfen şifre yöneticine veya güvenli bir yere kaydet.</p>
+                </div>
+              </div>
+
+              <button type="submit" id="create-submit-btn" class="btn btn-primary btn-block">
+                <span>Havuzumu Oluştur</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- 3. EKRAN: Kurtarma Anahtarı (Recovery Key) -->
+        <section id="screen-recovery" class="screen-view hidden">
+          <div class="auth-card">
+            <div class="card-badge badge-success">Havuz Oluşturuldu</div>
+            <h2 class="auth-title">Kurtarma Anahtarın</h2>
+            <p class="auth-desc">Şifreni unutursan havuzunu <strong>sadece bu anahtar</strong> açabilir. Başka hiçbir yedek bulunmaz.</p>
+
+            <div class="recovery-key-card">
+              <div class="key-display-wrapper">
+                <code id="recovery-key-text" class="recovery-key-code">K7QM-XXXX-XXXX-XXXX</code>
+              </div>
+              <button type="button" id="copy-recovery-key-btn" class="btn btn-secondary btn-copy" title="Anahtarı panoya kopyala">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg" aria-hidden="true">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                </svg>
+                <span id="copy-key-label">Kopyala</span>
+              </button>
+            </div>
+
+            <div class="checkbox-container">
+              <label class="custom-checkbox">
+                <input type="checkbox" id="recovery-confirmed-checkbox" />
+                <span class="checkbox-box" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span class="checkbox-text">Bu anahtarı güvenli bir yere kaydettim</span>
+              </label>
+            </div>
+
+            <button type="button" id="recovery-continue-btn" class="btn btn-primary btn-block" disabled>
+              <span>Devam Et</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 4. EKRAN: Havuzu Aç (Unlock) -->
+        <section id="screen-unlock" class="screen-view hidden">
+          <div class="auth-card">
+            <div class="auth-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="auth-large-icon">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+
+            <h2 class="auth-title">Havuzu Aç</h2>
+            <p class="auth-desc">Dosyalarının şifresini çözmek için ana şifreni gir.</p>
+
+            <div class="unlock-user-tag">
+              <span class="user-avatar" id="unlock-avatar">A</span>
+              <span id="unlock-user-email" class="unlock-email"></span>
+            </div>
+
+            <form id="unlock-pool-form" class="auth-form" novalidate>
+              <input type="text" id="unlock-username-hidden" name="username" autocomplete="username" class="sr-only" tabindex="-1" aria-hidden="true" />
+
+              <div class="form-group">
+                <label for="unlock-password" class="form-label">Şifre</label>
+                <div class="input-password-wrap">
+                  <input type="password" id="unlock-password" name="password" autocomplete="current-password" class="form-input" placeholder="Şifrenizi yazın" required />
+                  <button type="button" class="btn-toggle-pw" data-target="unlock-password" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" id="unlock-submit-btn" class="btn btn-primary btn-block">
+                <span>Havuzu Aç</span>
+              </button>
+
+              <div class="auth-footer-links">
+                <button type="button" id="go-forgot-pw-btn" class="btn-link">Şifremi unuttum</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- 5. EKRAN: Şifremi Unuttum / Kurtar (Forgot Password) -->
+        <section id="screen-forgot" class="screen-view hidden">
+          <div class="auth-card">
+            <h2 class="auth-title">Havuzu Kurtar</h2>
+            <p class="auth-desc">Kurtarma anahtarını girerek havuzuna yeni bir şifre belirleyebilirsin.</p>
+
+            <form id="forgot-pool-form" class="auth-form" novalidate>
+              <div class="form-group">
+                <label for="recover-key-input" class="form-label">Kurtarma Anahtarı</label>
+                <input type="text" id="recover-key-input" class="form-input font-mono" placeholder="K7QM-XXXX-XXXX-XXXX" required spellcheck="false" autocomplete="off" />
+              </div>
+
+              <div class="form-group">
+                <label for="recover-password" class="form-label">Yeni Şifre</label>
+                <div class="input-password-wrap">
+                  <input type="password" id="recover-password" autocomplete="new-password" class="form-input" placeholder="En az 10 karakter" required minlength="10" />
+                  <button type="button" class="btn-toggle-pw" data-target="recover-password" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="recover-password-confirm" class="form-label">Yeni Şifre Tekrarı</label>
+                <div class="input-password-wrap">
+                  <input type="password" id="recover-password-confirm" autocomplete="new-password" class="form-input" placeholder="Yeni şifreni tekrar yaz" required />
+                  <button type="button" class="btn-toggle-pw" data-target="recover-password-confirm" title="Şifreyi göster/gizle" aria-label="Şifreyi göster/gizle">
+                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" id="recover-submit-btn" class="btn btn-primary btn-block">
+                <span>Şifreyi Yenile ve Havuzu Aç</span>
+              </button>
+
+              <div class="auth-footer-links">
+                <button type="button" id="back-to-unlock-btn" class="btn-link">Girişe dön</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- 6. EKRAN: Ana Ekran (Main Dashboard) -->
+        <section id="screen-dashboard" class="screen-view hidden">
+          <div class="dashboard-layout">
+
+            <!-- Doluluk ve Durum Kartı (Hero Storage Card) -->
+            <div class="storage-card" id="storage-card">
+              <div class="storage-card-header">
+                <div class="storage-main-stat">
+                  <span class="storage-percent-label" id="dash-percent-text">%37 dolu</span>
+                  <span class="storage-sub-label" id="dash-used-total-text">11.9 GB / 32.2 GB</span>
+                </div>
+                <div class="storage-free-badge" id="dash-remaining-pill">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="badge-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <span id="dash-can-store-text">Daha 20.3 GB sığar</span>
+                </div>
+              </div>
+
+              <!-- İlerleme Çubuğu -->
+              <div class="storage-progress-bar-track">
+                <div id="storage-progress-bar-fill" class="storage-progress-bar-fill"></div>
+              </div>
+
+              <!-- Koruma Durumu Rozeti -->
+              <div id="protection-status-card" class="protection-card protection-parity">
+                <div class="protection-content">
+                  <div class="protection-icon-wrap" id="protection-icon-container">
+                    <!-- SVG ikonu JS ile dinamik yerleştirilir -->
+                  </div>
+                  <div class="protection-texts">
+                    <span class="protection-title" id="protection-status-title">Bir hesap kaybolsa da dosyaların güvende</span>
+                  </div>
+                </div>
+                <button type="button" id="protection-add-acc-btn" class="btn btn-sm btn-outline hidden">
+                  + Hesap Ekle
+                </button>
+              </div>
+            </div>
+
+            <!-- Dosya Yükleme Bırakma Alanı (Dropzone) -->
+            <div id="dropzone" class="dropzone-card" tabindex="0" role="button" aria-label="Dosya yüklemek için tıklayın veya sürükleyip bırakın">
+              <input type="file" id="file-input" class="sr-only" multiple />
+              <div class="dropzone-inner">
+                <div class="dropzone-icon-circle" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropzone-icon">
+                    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                    <path d="M12 12v9"></path>
+                    <path d="m16 16-4-4-4 4"></path>
+                  </svg>
+                </div>
+                <div class="dropzone-text-group">
+                  <span class="dropzone-title">Dosyaları buraya bırak ya da seç</span>
+                  <span class="dropzone-subtitle">Telefonunda dokunarak seçebilirsin. Dosyaların doğrudan senin hesaplarına gider.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Aktif Yükleme İlerleme Listesi (Queue) -->
+            <div id="upload-queue-container" class="upload-queue-container hidden">
+              <div class="upload-queue-header">
+                <span class="queue-title">Yükleniyor</span>
+                <span class="queue-count" id="queue-count-text">0 / 0</span>
+              </div>
+              <div id="upload-queue-items" class="upload-queue-items">
+                <!-- Dinamik yükleme satırları -->
+              </div>
+            </div>
+
+            <!-- Dosya Listesi Bölümü -->
+            <div class="files-section">
+              <div class="section-header-row">
+                <div class="section-title-wrap">
+                  <h3 class="section-title">Dosyaların</h3>
+                  <span class="badge badge-neutral" id="files-count-badge">0</span>
+                </div>
+                <div class="file-search-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="file-search-input" class="search-input" placeholder="Dosyalarda ara..." aria-label="Dosyalarda ara" />
+                </div>
+              </div>
+
+              <!-- Dosya Listesi Konteyneri -->
+              <div class="files-card">
+                <div id="files-empty-state" class="empty-state hidden">
+                  <div class="empty-icon-wrap" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                  </div>
+                  <h4 class="empty-title">Havuzun henüz boş</h4>
+                  <p class="empty-desc">Yukarıdaki alana dosya sürükle ya da dokunarak ilk dosyanı yükle.</p>
+                </div>
+
+                <div id="files-list-table" class="files-list">
+                  <!-- JS ile doldurulur -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Hesaplar Katlanabilir Bölümü (Accordion) -->
+            <div class="accounts-section">
+              <div class="accordion-card">
+                <button type="button" id="accounts-toggle-btn" class="accordion-header" aria-expanded="true" aria-controls="accounts-body">
+                  <div class="accordion-title-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    <span class="accordion-title" id="accounts-header-title">Hesaplar (4)</span>
+                  </div>
+                  <div class="accordion-actions">
+                    <button type="button" id="open-add-account-btn" class="btn btn-sm btn-secondary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      <span>Hesap ekle</span>
+                    </button>
+                    <div class="accordion-chevron" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                  </div>
+                </button>
+
+                <div id="accounts-body" class="accordion-body">
+                  <div id="accounts-list-container" class="accounts-grid">
+                    <!-- Dinamik hesap kartları JS ile doldurulur -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Alt Bilgi / Önizleme Kontrolleri -->
+      <footer class="app-footer">
+        <div class="footer-info">
+          <span>havuz &bull; Sıfır-bilgi (Zero-knowledge) şifreli bulut havuzu &bull; <a href="/privacy.html">Gizlilik</a> &bull; <a href="https://github.com/oomer583/havuz">Açık kaynak</a></span>
+        </div>
+        <div class="footer-demo-links">
+          <button type="button" id="demo-reset-btn" class="footer-demo-btn" title="Örnek verileri sıfırla">Örnek Verileri Sıfırla</button>
+          <button type="button" id="demo-toggle-protection-btn" class="footer-demo-btn" title="Koruma durumunu değiştir">Korumayı Test Et</button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- MODAL 1: Hesap Ekleme Modalı -->
+    <div id="modal-add-account" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-add-account-title">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="modal-add-account-title" class="modal-title">Yeni Google Hesabı Bağla</h3>
+          <button type="button" id="close-add-acc-x" class="modal-close-btn" aria-label="Kapat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p class="modal-desc">
+            Hesabın açık olduğu herhangi bir tarayıcıda ya da telefonda bu adresi aç ve kodu yaz. <strong>Şifre gerekmez.</strong>
+          </p>
+
+          <div class="device-link-box">
+            <span class="device-link-label">1. Adrese Git:</span>
+            <a id="modal-device-url" href="https://google.com/device" target="_blank" rel="noopener noreferrer" class="device-url-link">
+              google.com/device
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="external-icon"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+          </div>
+
+          <div class="device-code-box">
+            <span class="device-code-label">2. Bu Kodu Yaz:</span>
+            <div class="code-and-copy-row">
+              <div id="modal-device-code" class="device-code-display">---- - ----</div>
+              <button type="button" id="modal-copy-code-btn" class="btn btn-secondary btn-copy" title="Kodu Kopyala">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon-svg"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+                <span id="modal-copy-code-label">Kopyala</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="modal-connecting-state" class="connecting-indicator">
+            <div class="spinner-dot" aria-hidden="true"></div>
+            <span>Onay bekleniyor...</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="modal-cancel-add-acc-btn" class="btn btn-secondary btn-block">Vazgeç</button>
+        </div>
       </div>
     </div>
-    <div class="card">
-      <label id="drop">
-        <input id="pick" type="file" multiple hidden>
-        <b>Dosyaları buraya bırak</b> ya da dokunup seç
-        <span class="meta">Telefonda galeriden, bilgisayarda klasörlerinden</span>
-      </label>
-      <ul id="uploads"></ul>
-    </div>
-    <div class="card">
-      <h2>Dosyalar</h2>
-      <ul id="files"></ul>
-    </div>
-  </section>
-</main>
 
-<div id="toast" hidden></div>
-<footer>Açık kaynak · <a href="https://github.com/oomer583/havuz">github.com/oomer583/havuz</a> · <a href="privacy.html">Gizlilik</a></footer>
-<script type="module" src="app.js"></script>
-</body>
+    <!-- MODAL 2: Dosya Silme Onay Modalı -->
+    <div id="modal-delete-confirm" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-delete-title">
+      <div class="modal-box modal-box-sm">
+        <div class="delete-icon-circle" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </div>
+        <h3 id="modal-delete-title" class="modal-title text-center">Dosyayı Sil</h3>
+        <p class="modal-desc text-center">
+          "<strong id="delete-file-name-target">dosya.ext</strong>" adlı dosyayı silmek istediğine emin misin?
+          <br /><span class="text-danger">Bu işlem geri alınamaz.</span>
+        </p>
+
+        <div class="modal-actions-row">
+          <button type="button" id="delete-cancel-btn" class="btn btn-secondary">Vazgeç</button>
+          <button type="button" id="delete-confirm-btn" class="btn btn-danger">Dosyayı Sil</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bildirim Kartları Alanı (Toast Notifications) -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
 </html>

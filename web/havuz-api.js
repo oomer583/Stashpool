@@ -41,7 +41,8 @@ const state = {
 
 const fail = (code, message) => Object.assign(new Error(message), { code })
 const listeners = new Set()
-const changed = () => { for (const cb of listeners) { try { cb() } catch {} } }
+// listeners get the fresh status, so a UI can redraw straight from it
+const changed = () => { const s = havuz.status(); for (const cb of listeners) { try { cb(s) } catch {} } }
 const b64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
 export function human(b) {
@@ -346,7 +347,14 @@ export const havuz = {
       protection: n >= 3 ? 'parity' : n === 2 ? 'copy' : n === 1 ? 'none' : 'no_accounts',
       // parity: survives losing any 1 account; copy: every file on both; none: unprotected
       busy: state.uploading > 0,
+      isUnlocked: !!state.vault,
     }
+  },
+
+  /** Lock: forget every key and token in memory by reloading the page. */
+  lock() {
+    state.vault = null; state.index = null; state.tokens = {}; state.sealedIndex = null
+    location.reload()
   },
 
   /** Store a File from an <input type=file> or drag and drop. onProgress gets 0..100. */
@@ -396,6 +404,6 @@ export const havuz = {
     await saveIndex()
   },
 
-  /** cb() runs after every change (upload, delete, new account). Returns an unsubscribe function. */
+  /** cb(status) runs after every change (upload, delete, new account). Returns an unsubscribe function. */
   onChange(cb) { listeners.add(cb); return () => listeners.delete(cb) },
 }
