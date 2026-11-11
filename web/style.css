@@ -1899,3 +1899,7 @@ a:hover {
 }
 
 .added-ok { color: var(--success); font-weight: 600; }
+
+/* never let one long value push the page sideways on phones */
+html, body { max-width: 100%; overflow-x: hidden; }
+.storage-percent-label, .storage-sub-label, .file-name, .user-email-text { overflow-wrap: anywhere; }

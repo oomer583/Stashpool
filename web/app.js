@@ -530,7 +530,8 @@ function renderDashboard(status) {
   const progressBarFill = document.getElementById('storage-progress-bar-fill');
 
   const percent = status.percent || 0;
-  if (percentTextEl) percentTextEl.textContent = `%${percent} dolu`;
+  // 1 decimal under 10%, whole numbers above: '%3.4 dolu', '%25 dolu'
+  if (percentTextEl) percentTextEl.textContent = `%${percent < 10 ? percent.toFixed(1) : Math.round(percent)} dolu`;
   if (usedTotalTextEl) usedTotalTextEl.textContent = `${human(status.used)} / ${human(status.limit)}`;
   if (canStoreTextEl) canStoreTextEl.textContent = `Daha ${human(status.canStillStore)} sığar`;
 
@@ -944,7 +945,7 @@ function updateQueueUI() {
 
     const percent = document.createElement('span');
     percent.className = 'queue-percent';
-    percent.textContent = item.status === 'error' ? 'Hata' : `%${item.progress}`;
+    percent.textContent = item.status === 'error' ? 'Hata' : `%${Math.round(item.progress || 0)}`;
 
     meta.appendChild(name);
     meta.appendChild(percent);
